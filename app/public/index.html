@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AutoDeploy — CI/CD Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black:    #0a0a0a;
+      --dark:     #111214;
+      --panel:    #181a1e;
+      --border:   #2a2d35;
+      --muted:    #3a3d48;
+      --dim:      #6b7080;
+      --text:     #d4d8e8;
+      --bright:   #edf0ff;
+      --green:    #00e676;
+      --green-dim:#00864a;
+      --amber:    #ffab00;
+      --blue:     #448aff;
+      --red:      #ff5252;
+      --cyan:     #18ffff;
+    }
+
+    html { font-size: 14px; }
+
+    body {
+      background: var(--black);
+      color: var(--text);
+      font-family: 'IBM Plex Sans', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Grid scan-line overlay */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background-image:
+        repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,.012) 2px, rgba(255,255,255,.012) 4px);
+      mix-blend-mode: overlay;
+    }
+
+    .wrap { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 0 24px 60px; }
+
+    /* ── HEADER ── */
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 20px 0 16px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap;
+    }
+    .logo {
+      display: flex; align-items: center; gap: 14px;
+    }
+    .logo-icon {
+      width: 36px; height: 36px; background: var(--green); border-radius: 6px;
+      display: grid; place-items: center;
+      box-shadow: 0 0 18px rgba(0,230,118,.45);
+    }
+    .logo-icon svg { width: 20px; height: 20px; fill: var(--black); }
+    .logo-text { font-family: 'IBM Plex Mono', monospace; font-size: 1.3rem; font-weight: 600; color: var(--bright); letter-spacing: -0.5px; }
+    .logo-text span { color: var(--green); }
+    .header-meta { font-family: 'IBM Plex Mono', monospace; font-size: .72rem; color: var(--dim); text-align: right; line-height: 1.6; }
+    .header-meta strong { color: var(--amber); }
+
+    /* ── PIPELINE STATUS BAR ── */
+    .pipeline-bar {
+      margin: 28px 0;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px 20px;
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    }
+    .pipe-label { font-family: 'IBM Plex Mono', monospace; font-size: .7rem; color: var(--dim); margin-right: 8px; text-transform: uppercase; letter-spacing: 1px; }
+    .stage {
+      display: flex; align-items: center; gap: 6px;
+      background: var(--dark); border: 1px solid var(--border);
+      border-radius: 4px; padding: 5px 10px;
+      font-family: 'IBM Plex Mono', monospace; font-size: .72rem; color: var(--dim);
+      transition: all .3s;
+    }
+    .stage.done   { border-color: var(--green-dim); color: var(--green); background: rgba(0,230,118,.06); }
+    .stage.active { border-color: var(--amber); color: var(--amber); background: rgba(255,171,0,.06); animation: pulse-border 1.2s ease-in-out infinite; }
+    .stage.fail   { border-color: var(--red); color: var(--red); background: rgba(255,82,82,.06); }
+    @keyframes pulse-border { 0%,100% { box-shadow: 0 0 0 0 rgba(255,171,0,.3); } 50% { box-shadow: 0 0 0 4px rgba(255,171,0,.0); } }
+    .stage-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .stage.active .stage-dot { animation: blink .8s ease-in-out infinite; }
+    @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: .2; } }
+    .pipe-arrow { color: var(--muted); font-family: 'IBM Plex Mono', monospace; font-size: .8rem; }
+
+    /* ── GRID ── */
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+    @media (max-width: 640px) { .grid { grid-template-columns: 1fr; } }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 16px; }
+    @media (max-width: 700px) { .grid-3 { grid-template-columns: 1fr; } }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 8px; padding: 20px;
+      position: relative; overflow: hidden;
+      transition: border-color .2s;
+    }
+    .card:hover { border-color: var(--muted); }
+    .card-accent-green::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--green); box-shadow: 0 0 12px var(--green); }
+    .card-accent-blue::after  { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--blue); box-shadow: 0 0 12px var(--blue); }
+    .card-accent-amber::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--amber); box-shadow: 0 0 12px var(--amber); }
+    .card-accent-cyan::after  { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--cyan); box-shadow: 0 0 12px var(--cyan); }
+
+    .card-title {
+      font-family: 'IBM Plex Mono', monospace; font-size: .7rem;
+      text-transform: uppercase; letter-spacing: 1.2px;
+      color: var(--dim); margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+    }
+    .card-title .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); display: inline-block; }
+    .card-title .dot.amber { background: var(--amber); }
+    .card-title .dot.blue  { background: var(--blue); }
+    .card-title .dot.cyan  { background: var(--cyan); }
+
+    /* Status indicator */
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-family: 'IBM Plex Mono', monospace; font-size: .78rem;
+      padding: 4px 10px; border-radius: 3px;
+    }
+    .status-badge.ok   { background: rgba(0,230,118,.1); color: var(--green); border: 1px solid var(--green-dim); }
+    .status-badge.warn { background: rgba(255,171,0,.1); color: var(--amber); border: 1px solid rgba(255,171,0,.4); }
+    .status-badge.err  { background: rgba(255,82,82,.1); color: var(--red); border: 1px solid rgba(255,82,82,.4); }
+    .status-badge::before { content: '●'; font-size: .6rem; }
+
+    /* Big stat */
+    .big-stat { font-family: 'IBM Plex Mono', monospace; font-size: 2.2rem; font-weight: 600; color: var(--bright); line-height: 1; }
+    .big-stat-label { font-size: .72rem; color: var(--dim); margin-top: 4px; }
+
+    /* JSON terminal */
+    .terminal {
+      background: var(--dark); border: 1px solid var(--border);
+      border-radius: 6px; padding: 14px 16px;
+      font-family: 'IBM Plex Mono', monospace; font-size: .78rem;
+      line-height: 1.7; white-space: pre-wrap; word-break: break-all;
+      color: var(--text); min-height: 80px;
+    }
+    .terminal .key   { color: var(--blue); }
+    .terminal .str   { color: var(--green); }
+    .terminal .num   { color: var(--amber); }
+    .terminal .bool  { color: var(--cyan); }
+    .terminal .null  { color: var(--red); }
+    .loading-dots::after { content: '...'; animation: ldots 1.2s steps(4, end) infinite; }
+    @keyframes ldots { 0%{content:'.'} 33%{content:'..'} 66%{content:'...'} 100%{content:'.'} }
+
+    /* Button */
+    .btn {
+      font-family: 'IBM Plex Mono', monospace; font-size: .78rem; font-weight: 500;
+      border: 1px solid; border-radius: 4px; padding: 8px 16px; cursor: pointer;
+      letter-spacing: .5px; transition: all .15s; display: inline-flex; align-items: center; gap: 7px;
+      background: transparent;
+    }
+    .btn-green { color: var(--green); border-color: var(--green-dim); }
+    .btn-green:hover { background: rgba(0,230,118,.1); box-shadow: 0 0 12px rgba(0,230,118,.2); }
+    .btn-blue  { color: var(--blue);  border-color: rgba(68,138,255,.4); }
+    .btn-blue:hover  { background: rgba(68,138,255,.1); }
+    .btn-group { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+
+    /* Metric row */
+    .metric-row { display: flex; justify-content: space-between; align-items: baseline; padding: 7px 0; border-bottom: 1px solid var(--border); }
+    .metric-row:last-child { border-bottom: none; }
+    .metric-key { font-family: 'IBM Plex Mono', monospace; font-size: .73rem; color: var(--dim); }
+    .metric-val { font-family: 'IBM Plex Mono', monospace; font-size: .8rem; color: var(--text); }
+    .metric-val.green { color: var(--green); }
+    .metric-val.amber { color: var(--amber); }
+    .metric-val.blue  { color: var(--blue); }
+
+    /* Log stream */
+    .log-stream {
+      background: var(--dark); border: 1px solid var(--border); border-radius: 6px;
+      padding: 12px; max-height: 200px; overflow-y: auto;
+      font-family: 'IBM Plex Mono', monospace; font-size: .72rem; line-height: 1.8;
+    }
+    .log-stream::-webkit-scrollbar { width: 4px; }
+    .log-stream::-webkit-scrollbar-track { background: var(--dark); }
+    .log-stream::-webkit-scrollbar-thumb { background: var(--muted); border-radius: 2px; }
+    .log-line { display: flex; gap: 10px; }
+    .log-ts { color: var(--dim); flex-shrink: 0; }
+    .log-msg.info  { color: var(--text); }
+    .log-msg.ok    { color: var(--green); }
+    .log-msg.warn  { color: var(--amber); }
+    .log-msg.err   { color: var(--red); }
+
+    /* Progress bar */
+    .progress-wrap { margin-top: 10px; }
+    .progress-label { display: flex; justify-content: space-between; font-family: 'IBM Plex Mono', monospace; font-size: .7rem; color: var(--dim); margin-bottom: 5px; }
+    .progress-bar { height: 4px; background: var(--muted); border-radius: 2px; overflow: hidden; }
+    .progress-fill { height: 100%; background: var(--green); border-radius: 2px; box-shadow: 0 0 8px var(--green); transition: width .5s ease; }
+    .progress-fill.blue  { background: var(--blue); box-shadow: 0 0 8px var(--blue); }
+    .progress-fill.amber { background: var(--amber); box-shadow: 0 0 8px var(--amber); }
+
+    /* Footer */
+    footer { border-top: 1px solid var(--border); padding: 18px 0 0; margin-top: 40px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+    footer span { font-family: 'IBM Plex Mono', monospace; font-size: .68rem; color: var(--dim); }
+    footer strong { color: var(--green); }
+
+    /* Glow effect on load */
+    @keyframes fade-up { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    .card { animation: fade-up .4s ease both; }
+    .card:nth-child(1) { animation-delay: .05s; }
+    .card:nth-child(2) { animation-delay: .1s; }
+    .card:nth-child(3) { animation-delay: .15s; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24"><path d="M4 4h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4zM4 10h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4zM4 16h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4z"/></svg>
+      </div>
+      <div class="logo-text">Auto<span>Deploy</span></div>
+    </div>
+    <div class="header-meta">
+      <div>CI/CD PIPELINE DASHBOARD</div>
+      <div>HOST: <strong id="hdr-host">localhost:3000</strong> &nbsp;|&nbsp; ENV: <strong id="hdr-env">—</strong></div>
+    </div>
+  </header>
+
+  <!-- PIPELINE STATUS BAR -->
+  <div class="pipeline-bar">
+    <span class="pipe-label">Pipeline</span>
+    <div class="stage done" id="stage-clone"><span class="stage-dot"></span>Clone</div>
+    <span class="pipe-arrow">›</span>
+    <div class="stage done" id="stage-deps"><span class="stage-dot"></span>Install</div>
+    <span class="pipe-arrow">›</span>
+    <div class="stage done" id="stage-test"><span class="stage-dot"></span>Test</div>
+    <span class="pipe-arrow">›</span>
+    <div class="stage done" id="stage-build"><span class="stage-dot"></span>Build Image</div>
+    <span class="pipe-arrow">›</span>
+    <div class="stage done" id="stage-tag"><span class="stage-dot"></span>Tag</div>
+    <span class="pipe-arrow">›</span>
+    <div class="stage active" id="stage-deploy"><span class="stage-dot"></span>Deploy</div>
+  </div>
+
+  <!-- ROW 1: health + message -->
+  <div class="grid">
+    <div class="card card-accent-green">
+      <div class="card-title"><span class="dot"></span>Health Check &mdash; /health</div>
+      <div id="health-badge" class="status-badge warn">loading</div>
+      <div class="terminal" id="health-out" style="margin-top:12px"><span class="loading-dots">fetching</span></div>
+      <div class="btn-group">
+        <button class="btn btn-green" onclick="fetchHealth()">⟳ Refresh</button>
+      </div>
+    </div>
+
+    <div class="card card-accent-blue">
+      <div class="card-title"><span class="dot blue"></span>API Response &mdash; /api/message</div>
+      <div id="msg-badge" class="status-badge warn">loading</div>
+      <div class="terminal" id="msg-out" style="margin-top:12px"><span class="loading-dots">fetching</span></div>
+      <div class="btn-group">
+        <button class="btn btn-blue" onclick="fetchMessage()">⟳ Refresh</button>
+        <button class="btn btn-blue" onclick="fetchStatus()">⊞ Status</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROW 2: metrics + log -->
+  <div class="grid-3">
+    <div class="card card-accent-amber">
+      <div class="card-title"><span class="dot amber"></span>Runtime Metrics</div>
+      <div class="metric-row"><span class="metric-key">version</span><span class="metric-val green" id="m-version">—</span></div>
+      <div class="metric-row"><span class="metric-key">build #</span><span class="metric-val amber" id="m-build">—</span></div>
+      <div class="metric-row"><span class="metric-key">uptime</span><span class="metric-val blue" id="m-uptime">—</span></div>
+      <div class="metric-row"><span class="metric-key">node</span><span class="metric-val" id="m-node">—</span></div>
+      <div class="metric-row"><span class="metric-key">platform</span><span class="metric-val" id="m-platform">—</span></div>
+    </div>
+
+    <div class="card card-accent-cyan" style="grid-column: span 2;">
+      <div class="card-title"><span class="dot cyan"></span>Live Request Log</div>
+      <div class="log-stream" id="log-stream">
+        <div class="log-line"><span class="log-ts">00:00:00</span><span class="log-msg info">Dashboard initialised</span></div>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-green" onclick="pingAll()">⟳ Ping All Endpoints</button>
+        <button class="btn btn-blue" onclick="clearLog()">✕ Clear Log</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROW 3: resource usage -->
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-title"><span class="dot"></span>Memory Usage (RSS / Heap)</div>
+    <div id="mem-bars"></div>
+  </div>
+
+  <footer>
+    <span>AutoDeploy &mdash; Jenkins + Docker CI/CD &nbsp;|&nbsp; <strong>RUNNING</strong></span>
+    <span id="footer-ts">—</span>
+  </footer>
+
+</div>
+
+<script>
+// ─── helpers ────────────────────────────────────────────────
+function ts() {
+  return new Date().toTimeString().slice(0,8);
+}
+
+function addLog(msg, level='info') {
+  const el = document.getElementById('log-stream');
+  const line = document.createElement('div');
+  line.className = 'log-line';
+  line.innerHTML = `<span class="log-ts">${ts()}</span><span class="log-msg ${level}">${msg}</span>`;
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+}
+
+function clearLog() {
+  document.getElementById('log-stream').innerHTML = '';
+  addLog('Log cleared', 'warn');
+}
+
+function syntaxHighlight(obj) {
+  const json = JSON.stringify(obj, null, 2);
+  return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+-]?\d+)?)/g, m => {
+    if (/^"/.test(m)) return /:$/.test(m) ? `<span class="key">${m}</span>` : `<span class="str">${m}</span>`;
+    if (/true|false/.test(m)) return `<span class="bool">${m}</span>`;
+    if (/null/.test(m)) return `<span class="null">${m}</span>`;
+    return `<span class="num">${m}</span>`;
+  });
+}
+
+function setBadge(id, status) {
+  const el = document.getElementById(id);
+  el.className = 'status-badge ' + (status === 200 ? 'ok' : 'err');
+  el.textContent = status === 200 ? 'OK ' + status : 'ERR ' + status;
+}
+
+function fmtUptime(s) {
+  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = Math.floor(s%60);
+  return `${h}h ${m}m ${sec}s`;
+}
+
+function fmtBytes(b) { return (b/1024/1024).toFixed(1) + ' MB'; }
+
+// ─── API calls ───────────────────────────────────────────────
+async function fetchHealth() {
+  addLog('GET /health', 'info');
+  try {
+    const r = await fetch('/health');
+    const d = await r.json();
+    setBadge('health-badge', r.status);
+    document.getElementById('health-out').innerHTML = syntaxHighlight(d);
+    document.getElementById('m-uptime').textContent = fmtUptime(d.uptime);
+    document.getElementById('m-version').textContent = d.version;
+    document.getElementById('m-build').textContent = '#' + d.build;
+    document.getElementById('hdr-env').textContent = 'production';
+    addLog(`/health → ${r.status} healthy`, 'ok');
+  } catch(e) {
+    setBadge('health-badge', 500);
+    document.getElementById('health-out').textContent = 'Error: ' + e.message;
+    addLog('/health → fetch failed: ' + e.message, 'err');
+  }
+}
+
+async function fetchMessage() {
+  addLog('GET /api/message', 'info');
+  try {
+    const r = await fetch('/api/message');
+    const d = await r.json();
+    setBadge('msg-badge', r.status);
+    document.getElementById('msg-out').innerHTML = syntaxHighlight(d);
+    document.getElementById('hdr-env').textContent = d.environment;
+    addLog(`/api/message → "${d.message.slice(0,40)}..."`, 'ok');
+  } catch(e) {
+    setBadge('msg-badge', 500);
+    document.getElementById('msg-out').textContent = 'Error: ' + e.message;
+    addLog('/api/message → failed: ' + e.message, 'err');
+  }
+}
+
+async function fetchStatus() {
+  addLog('GET /api/status', 'info');
+  try {
+    const r = await fetch('/api/status');
+    const d = await r.json();
+    document.getElementById('msg-out').innerHTML = syntaxHighlight(d);
+    document.getElementById('m-node').textContent = d.node;
+    document.getElementById('m-platform').textContent = d.platform;
+    renderMemBars(d.memory);
+    addLog(`/api/status → node ${d.node} on ${d.platform}`, 'ok');
+  } catch(e) {
+    addLog('/api/status → failed: ' + e.message, 'err');
+  }
+}
+
+function renderMemBars(mem) {
+  const el = document.getElementById('mem-bars');
+  const bars = [
+    { label: 'RSS',       val: mem.rss,       color: 'green', max: 256*1024*1024 },
+    { label: 'HeapUsed',  val: mem.heapUsed,  color: 'blue',  max: 128*1024*1024 },
+    { label: 'HeapTotal', val: mem.heapTotal, color: 'amber', max: 128*1024*1024 },
+    { label: 'External',  val: mem.external,  color: '',      max: 32*1024*1024  },
+  ];
+  el.innerHTML = bars.map(b => {
+    const pct = Math.min(100, (b.val / b.max * 100)).toFixed(1);
+    return `<div class="progress-wrap">
+      <div class="progress-label"><span>${b.label}</span><span>${fmtBytes(b.val)} / ${fmtBytes(b.max)}</span></div>
+      <div class="progress-bar"><div class="progress-fill ${b.color}" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join('');
+}
+
+async function pingAll() {
+  addLog('─── Pinging all endpoints ───', 'warn');
+  await fetchHealth();
+  await fetchMessage();
+  await fetchStatus();
+  addLog('─── All endpoints pinged ────', 'warn');
+}
+
+// ─── init ────────────────────────────────────────────────────
+document.getElementById('hdr-host').textContent = location.host;
+document.getElementById('footer-ts').textContent = 'Last loaded: ' + new Date().toLocaleString();
+
+setInterval(() => {
+  document.getElementById('footer-ts').textContent = 'Updated: ' + new Date().toLocaleString();
+}, 5000);
+
+// auto-load on start
+(async () => {
+  await fetchHealth();
+  await fetchMessage();
+  await fetchStatus();
+})();
+</script>
+</body>
+</html>
