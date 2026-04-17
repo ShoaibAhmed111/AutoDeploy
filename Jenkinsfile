@@ -152,7 +152,12 @@ pipeline {
                 echo "════════════════════════════════════════"
                 sh """
                     sleep 8
-                    HEALTH=\$(curl -sf http://localhost:${APP_PORT}/health || echo FAILED)
+
+                    # Get the container's own IP address (Jenkins and app are separate containers)
+                    APP_IP=\$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CONTAINER_NAME})
+                    echo "Container IP: \$APP_IP"
+
+                    HEALTH=\$(curl -sf http://\$APP_IP:3000/health || echo FAILED)
                     echo "Health: \$HEALTH"
                     if echo "\$HEALTH" | grep -q healthy; then
                         echo "Health check PASSED"
@@ -160,12 +165,14 @@ pipeline {
                         docker logs ${CONTAINER_NAME} --tail 30
                         exit 1
                     fi
-                    MSG=\$(curl -sf http://localhost:${APP_PORT}/api/message || echo FAILED)
+
+                    MSG=\$(curl -sf http://\$APP_IP:3000/api/message || echo FAILED)
                     if echo "\$MSG" | grep -q message; then
                         echo "API check PASSED"
                     else
                         exit 1
                     fi
+
                     echo "DEPLOYMENT SUCCESSFUL — http://localhost:${APP_PORT}"
                 """
             }
