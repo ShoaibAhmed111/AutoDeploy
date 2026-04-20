@@ -50,7 +50,7 @@ pipeline {
                     if [ -n "\$APP_IP" ]; then
                         curl -sf -X POST http://\$APP_IP:3000/api/pipeline \
                           -H 'Content-Type: application/json' \
-                          -d "{\\"buildNumber\\":\\"${BUILD_NUMBER}\\",\\"status\\":\\"running\\",\\"version\\":\\"${APP_VERSION}\\",\\"triggeredBy\\":\\"${BUILD_USER_ID:-jenkins}\\",\\"commit\\":\\"\$COMMIT\\",\\"author\\":\\"\$AUTHOR\\",\\"branch\\":\\"main\\",\\"startedAt\\":\\"\$(date -u +%Y-%m-%dT%H:%M:%SZ)\\",\\"stages\\":[{\\"name\\":\\"Clone Repository\\",\\"status\\":\\"success\\"},{\\"name\\":\\"Install Dependencies\\",\\"status\\":\\"running\\"},{\\"name\\":\\"Run Tests\\",\\"status\\":\\"pending\\"},{\\"name\\":\\"Build Docker Image\\",\\"status\\":\\"pending\\"},{\\"name\\":\\"Tag Image\\",\\"status\\":\\"pending\\"},{\\"name\\":\\"Deploy Container\\",\\"status\\":\\"pending\\"},{\\"name\\":\\"Verify Deployment\\",\\"status\\":\\"pending\\"}]}" || true
+                          -d "{\\"buildNumber\\":\\"${BUILD_NUMBER}\\",\\"status\\":\\"running\\",\\"version\\":\\"${APP_VERSION}\\",\\"triggeredBy\\":\\"jenkins\\",\\"commit\\":\\"\$COMMIT\\",\\"author\\":\\"\$AUTHOR\\",\\"branch\\":\\"main\\",\\"startedAt\\":\\"\$(date -u +%Y-%m-%dT%H:%M:%SZ)\\",\\"stages\\":[{\\"name\\":\\"Clone Repository\\",\\"status\\":\\"success\\"},{\\"name\\":\\"Install Dependencies\\",\\"status\\":\\"running\\"},{\\"name\\":\\"Run Tests\\",\\"status\\":\\"pending\\"},{\\"name\\":\\"Build Docker Image\\",\\"status\\":\\"pending\\"},{\\"name\\":\\"Tag Image\\",\\"status\\":\\"pending\\"},{\\"name\\":\\"Deploy Container\\",\\"status\\":\\"pending\\"},{\\"name\\":\\"Verify Deployment\\",\\"status\\":\\"pending\\"}]}" || true
                     fi
                 """
             }
@@ -201,7 +201,7 @@ pipeline {
                         exit 1
                     fi
 
-                    // Final success update to dashboard
+                    # Final success update to dashboard
                     curl -sf -X POST http://\$APP_IP:3000/api/pipeline \
                       -H 'Content-Type: application/json' \
                       -d "{\\"buildNumber\\":\\"${BUILD_NUMBER}\\",\\"status\\":\\"success\\",\\"version\\":\\"${APP_VERSION}\\",\\"finishedAt\\":\\"\$(date -u +%Y-%m-%dT%H:%M:%SZ)\\",\\"stages\\":[{\\"name\\":\\"Clone Repository\\",\\"status\\":\\"success\\"},{\\"name\\":\\"Install Dependencies\\",\\"status\\":\\"success\\"},{\\"name\\":\\"Run Tests\\",\\"status\\":\\"success\\"},{\\"name\\":\\"Build Docker Image\\",\\"status\\":\\"success\\"},{\\"name\\":\\"Tag Image\\",\\"status\\":\\"success\\"},{\\"name\\":\\"Deploy Container\\",\\"status\\":\\"success\\"},{\\"name\\":\\"Verify Deployment\\",\\"status\\":\\"success\\"}]}" || true
