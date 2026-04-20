@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AutoDeploy — Live Pipeline</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+    :root{
+      --bg:      #0b0d11;
+      --surface: #13161c;
+      --card:    #1a1d25;
+      --border:  #252932;
+      --muted:   #373c4a;
+      --dim:     #5a6070;
+      --text:    #c8cdd e;
+      --bright:  #eef0ff;
+      --green:   #00e676;
+      --gdim:    #00693a;
+      --amber:   #ffc107;
+      --blue:    #4da6ff;
+      --red:     #ff4f4f;
+      --purple:  #b388ff;
+      --cyan:    #00e5ff;
+    }
+
+    body{background:var(--bg);color:#cdd0df;font-family:'IBM Plex Sans',sans-serif;min-height:100vh;overflow-x:hidden}
+
+    /* scanline */
+    body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+      background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(255,255,255,.008) 2px,rgba(255,255,255,.008) 4px)}
+
+    .wrap{position:relative;z-index:1;max-width:1000px;margin:0 auto;padding:0 20px 60px}
+
+    /* ── HEADER ── */
+    header{padding:18px 0 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+    .logo{display:flex;align-items:center;gap:12px}
+    .logo-box{width:32px;height:32px;background:var(--green);border-radius:6px;display:grid;place-items:center}
+    .logo-box svg{width:18px;height:18px;fill:var(--bg)}
+    .logo-name{font-family:'IBM Plex Mono',monospace;font-size:1.15rem;font-weight:600;color:#eef0ff}
+    .logo-name span{color:var(--green)}
+    .logo-sub{font-family:'IBM Plex Mono',monospace;font-size:.65rem;color:var(--dim);letter-spacing:1.5px;text-transform:uppercase;margin-top:2px}
+    .header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 1.4s ease-in-out infinite}
+    @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(0,230,118,.5)}50%{box-shadow:0 0 0 6px rgba(0,230,118,0)}}
+    .live-label{font-family:'IBM Plex Mono',monospace;font-size:.7rem;color:var(--green);text-transform:uppercase;letter-spacing:1px}
+    .refresh-btn{font-family:'IBM Plex Mono',monospace;font-size:.7rem;color:var(--dim);border:1px solid var(--border);background:transparent;padding:5px 12px;border-radius:4px;cursor:pointer;transition:all .15s}
+    .refresh-btn:hover{border-color:var(--muted);color:var(--text)}
+    .nav-link{font-family:'IBM Plex Mono',monospace;font-size:.7rem;color:var(--blue);border:1px solid rgba(77,166,255,.3);padding:5px 12px;border-radius:4px;text-decoration:none;transition:all .15s}
+    .nav-link:hover{background:rgba(77,166,255,.08)}
+
+    /* ── STATUS BANNER ── */
+    .status-banner{margin:20px 0;border-radius:8px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;border:1px solid;transition:all .4s}
+    .status-banner.success{background:rgba(0,230,118,.06);border-color:var(--gdim)}
+    .status-banner.running{background:rgba(255,193,7,.06);border-color:rgba(255,193,7,.4);animation:banner-pulse 2s ease-in-out infinite}
+    .status-banner.failed {background:rgba(255,79,79,.06);border-color:rgba(255,79,79,.4)}
+    .status-banner.unknown{background:rgba(90,96,112,.06);border-color:var(--border)}
+    @keyframes banner-pulse{0%,100%{background:rgba(255,193,7,.06)}50%{background:rgba(255,193,7,.1)}}
+    .banner-left{display:flex;align-items:center;gap:12px}
+    .banner-icon{font-size:1.4rem}
+    .banner-title{font-family:'IBM Plex Mono',monospace;font-size:.95rem;font-weight:600}
+    .status-banner.success .banner-title{color:var(--green)}
+    .status-banner.running .banner-title{color:var(--amber)}
+    .status-banner.failed  .banner-title{color:var(--red)}
+    .status-banner.unknown .banner-title{color:var(--dim)}
+    .banner-sub{font-size:.75rem;color:var(--dim);margin-top:2px;font-family:'IBM Plex Mono',monospace}
+    .banner-right{font-family:'IBM Plex Mono',monospace;font-size:.72rem;color:var(--dim);text-align:right;line-height:1.8}
+    .banner-right strong{color:var(--text)}
+
+    /* ── GRID ── */
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+    @media(max-width:600px){.grid2{grid-template-columns:1fr}}
+
+    /* ── CARDS ── */
+    .card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:18px;position:relative;overflow:hidden}
+    .card-top{font-family:'IBM Plex Mono',monospace;font-size:.65rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim);margin-bottom:14px;display:flex;align-items:center;gap:6px}
+    .card-dot{width:5px;height:5px;border-radius:50%}
+    .card-dot.green{background:var(--green)}
+    .card-dot.blue {background:var(--blue)}
+    .card-dot.amber{background:var(--amber)}
+    .card-dot.purple{background:var(--purple)}
+
+    /* accent lines */
+    .card.green-acc::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--green)}
+    .card.blue-acc::after {content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--blue)}
+    .card.amber-acc::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--amber)}
+    .card.purple-acc::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--purple)}
+
+    /* ── PIPELINE STAGES ── */
+    .stages{display:flex;flex-direction:column;gap:8px}
+    .stage-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface);transition:border-color .3s}
+    .stage-row.success{border-color:var(--gdim);background:rgba(0,230,118,.04)}
+    .stage-row.running{border-color:var(--amber);background:rgba(255,193,7,.04);animation:row-pulse 1.2s ease-in-out infinite}
+    .stage-row.failed {border-color:rgba(255,79,79,.5);background:rgba(255,79,79,.04)}
+    .stage-row.pending{opacity:.45}
+    @keyframes row-pulse{0%,100%{border-color:var(--amber)}50%{border-color:rgba(255,193,7,.3)}}
+    .stage-num{font-family:'IBM Plex Mono',monospace;font-size:.65rem;color:var(--dim);width:16px;flex-shrink:0}
+    .stage-name{font-family:'IBM Plex Mono',monospace;font-size:.78rem;flex:1;color:var(--text)}
+    .stage-row.success .stage-name{color:#cde8d4}
+    .stage-row.failed  .stage-name{color:#e8cdcd}
+    .stage-icon{font-size:.85rem;flex-shrink:0}
+    .stage-dur{font-family:'IBM Plex Mono',monospace;font-size:.65rem;color:var(--dim);flex-shrink:0}
+    .spinner{width:14px;height:14px;border:2px solid rgba(255,193,7,.2);border-top-color:var(--amber);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* ── METRIC ROWS ── */
+    .metric{display:flex;justify-content:space-between;align-items:baseline;padding:7px 0;border-bottom:1px solid var(--border)}
+    .metric:last-child{border-bottom:none}
+    .metric-k{font-family:'IBM Plex Mono',monospace;font-size:.7rem;color:var(--dim)}
+    .metric-v{font-family:'IBM Plex Mono',monospace;font-size:.78rem;color:var(--text)}
+    .metric-v.green{color:var(--green)}
+    .metric-v.amber{color:var(--amber)}
+    .metric-v.blue {color:var(--blue)}
+    .metric-v.red  {color:var(--red)}
+
+    /* ── BUILD HISTORY ── */
+    .history-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:5px;margin-bottom:6px;border:1px solid var(--border);background:var(--surface);font-family:'IBM Plex Mono',monospace;font-size:.72rem}
+    .history-row:last-child{margin-bottom:0}
+    .h-num{color:var(--dim);width:28px;flex-shrink:0}
+    .h-status{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+    .h-status.success{background:var(--green)}
+    .h-status.failed {background:var(--red)}
+    .h-status.running{background:var(--amber)}
+    .h-msg{flex:1;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .h-time{color:var(--dim);flex-shrink:0}
+
+    /* ── COMMIT INFO ── */
+    .commit-box{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:10px 14px;font-family:'IBM Plex Mono',monospace;font-size:.75rem;color:var(--text);line-height:1.9}
+    .commit-box .label{color:var(--dim);display:inline-block;width:60px}
+    .commit-hash{color:var(--purple)}
+    .commit-branch{color:var(--cyan)}
+
+    /* ── HOW TO USE SECTION ── */
+    .howto{margin-top:24px}
+    .howto-title{font-family:'IBM Plex Mono',monospace;font-size:.7rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim);margin-bottom:14px;display:flex;align-items:center;gap:6px}
+    .step-list{display:flex;flex-direction:column;gap:8px}
+    .step-item{display:flex;gap:12px;padding:12px 14px;background:var(--card);border:1px solid var(--border);border-radius:6px;align-items:flex-start}
+    .step-num{font-family:'IBM Plex Mono',monospace;font-size:.7rem;font-weight:600;color:var(--bg);background:var(--green);width:20px;height:20px;border-radius:4px;display:grid;place-items:center;flex-shrink:0;margin-top:1px}
+    .step-num.blue{background:var(--blue)}
+    .step-num.amber{background:var(--amber);color:var(--bg)}
+    .step-num.purple{background:var(--purple);color:var(--bg)}
+    .step-body{}
+    .step-title{font-family:'IBM Plex Mono',monospace;font-size:.78rem;font-weight:600;color:var(--bright);margin-bottom:4px}
+    .step-desc{font-size:.75rem;color:var(--dim);line-height:1.6}
+    .cmd{display:inline-block;background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:2px 8px;font-family:'IBM Plex Mono',monospace;font-size:.7rem;color:var(--green);margin-top:4px}
+
+    /* ── FOOTER ── */
+    footer{border-top:1px solid var(--border);padding:16px 0 0;margin-top:32px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+    footer span{font-family:'IBM Plex Mono',monospace;font-size:.65rem;color:var(--dim)}
+    footer strong{color:var(--green)}
+
+    /* fade in */
+    @keyframes fade-up{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    .card,.status-banner{animation:fade-up .35s ease both}
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo">
+      <div class="logo-box">
+        <svg viewBox="0 0 24 24"><path d="M4 4h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4zM4 10h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4zM4 16h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4z"/></svg>
+      </div>
+      <div>
+        <div class="logo-name">Auto<span>Deploy</span></div>
+        <div class="logo-sub">Live Pipeline Dashboard</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="live-dot"></div>
+      <span class="live-label">Live</span>
+      <button class="refresh-btn" onclick="fetchAll()">⟳ Refresh</button>
+      <a href="/" class="nav-link">App Home</a>
+      <a href="http://localhost:8080" target="_blank" class="nav-link">Jenkins</a>
+    </div>
+  </header>
+
+  <!-- STATUS BANNER -->
+  <div class="status-banner unknown" id="banner">
+    <div class="banner-left">
+      <div class="banner-icon" id="banner-icon">⏳</div>
+      <div>
+        <div class="banner-title" id="banner-title">Loading pipeline status...</div>
+        <div class="banner-sub" id="banner-sub">Connecting to server</div>
+      </div>
+    </div>
+    <div class="banner-right" id="banner-right">—</div>
+  </div>
+
+  <!-- ROW 1: Stages + Info -->
+  <div class="grid2">
+
+    <!-- Pipeline Stages -->
+    <div class="card green-acc" style="animation-delay:.05s">
+      <div class="card-top"><span class="card-dot green"></span>Pipeline stages</div>
+      <div class="stages" id="stages-list">
+        <div class="stage-row pending">
+          <span class="stage-num">—</span>
+          <span class="stage-name">Loading...</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Build Info + Commit -->
+    <div style="display:flex;flex-direction:column;gap:14px">
+
+      <div class="card blue-acc" style="animation-delay:.1s">
+        <div class="card-top"><span class="card-dot blue"></span>Build info</div>
+        <div class="metric"><span class="metric-k">build #</span><span class="metric-v green" id="m-build">—</span></div>
+        <div class="metric"><span class="metric-k">version</span><span class="metric-v blue" id="m-version">—</span></div>
+        <div class="metric"><span class="metric-k">status</span><span class="metric-v" id="m-status">—</span></div>
+        <div class="metric"><span class="metric-k">triggered by</span><span class="metric-v" id="m-trigger">—</span></div>
+        <div class="metric"><span class="metric-k">uptime</span><span class="metric-v" id="m-uptime">—</span></div>
+      </div>
+
+      <div class="card purple-acc" style="animation-delay:.15s">
+        <div class="card-top"><span class="card-dot purple"></span>Latest commit</div>
+        <div class="commit-box" id="commit-box">
+          <div><span class="label">hash</span> <span class="commit-hash" id="c-hash">—</span></div>
+          <div><span class="label">branch</span> <span class="commit-branch" id="c-branch">—</span></div>
+          <div><span class="label">by</span> <span id="c-author">—</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ROW 2: Build History -->
+  <div class="card amber-acc" style="margin-bottom:14px;animation-delay:.2s">
+    <div class="card-top"><span class="card-dot amber"></span>Build history (last 10)</div>
+    <div id="history-list">
+      <div class="history-row"><span class="h-msg" style="color:var(--dim)">No previous builds yet</span></div>
+    </div>
+  </div>
+
+  <!-- HOW TO USE -->
+  <div class="howto">
+    <div class="howto-title">
+      <span class="card-dot green"></span>
+      How to trigger the pipeline &amp; see changes here
+    </div>
+    <div class="step-list">
+
+      <div class="step-item">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">Start everything (do this every time you open your computer)</div>
+          <div class="step-desc">Open Docker Desktop and wait for it to load. Then double-click <strong>start-autodeploy.bat</strong> in your project folder. It starts Jenkins and fixes permissions automatically.</div>
+        </div>
+      </div>
+
+      <div class="step-item">
+        <div class="step-num blue">2</div>
+        <div class="step-body">
+          <div class="step-title">Make a code change</div>
+          <div class="step-desc">Edit any file in your project — for example change the message in <code style="color:var(--cyan);font-size:.7rem">app/src/server.js</code> on the /api/message route. Then push to GitHub:</div>
+          <div><span class="cmd">git add .</span></div>
+          <div><span class="cmd">git commit -m "my change"</span></div>
+          <div><span class="cmd">git push</span></div>
+        </div>
+      </div>
+
+      <div class="step-item">
+        <div class="step-num amber">3</div>
+        <div class="step-body">
+          <div class="step-title">Jenkins detects the push automatically</div>
+          <div class="step-desc">Jenkins polls GitHub every minute. Within 60 seconds it will detect your push and start the pipeline automatically. You can also go to <strong>http://localhost:8080</strong> → AutoDeploy → click <strong>Build Now</strong> to trigger it instantly.</div>
+        </div>
+      </div>
+
+      <div class="step-item">
+        <div class="step-num purple">4</div>
+        <div class="step-body">
+          <div class="step-title">Watch it here in real time</div>
+          <div class="step-desc">This page auto-refreshes every 5 seconds. You will see each stage turn green as it passes. When all 7 stages are green, your new code is live at <strong>http://localhost:3000</strong>. The build history below shows all previous runs.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <footer>
+    <span>AutoDeploy &mdash; CI/CD Dashboard &mdash; <strong id="f-status">loading</strong></span>
+    <span id="f-time">—</span>
+  </footer>
+
+</div>
+
+<script>
+// ── helpers ─────────────────────────────────────────────────
+function fmtUptime(s) {
+  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = Math.floor(s%60);
+  return h > 0 ? `${h}h ${m}m` : m > 0 ? `${m}m ${sec}s` : `${sec}s`;
+}
+function fmtTime(iso) {
+  if (!iso || iso === 'unknown') return '—';
+  try { return new Date(iso).toLocaleTimeString(); } catch { return iso; }
+}
+function timeAgo(iso) {
+  if (!iso) return '—';
+  const diff = Math.floor((Date.now() - new Date(iso)) / 1000);
+  if (diff < 60) return `${diff}s ago`;
+  if (diff < 3600) return `${Math.floor(diff/60)}m ago`;
+  return `${Math.floor(diff/3600)}h ago`;
+}
+
+const stageIcons = { success: '✓', running: null, failed: '✗', pending: '·' };
+
+function renderStage(s, i) {
+  const row = document.createElement('div');
+  row.className = `stage-row ${s.status}`;
+  const icon = s.status === 'running'
+    ? `<div class="spinner"></div>`
+    : `<span class="stage-icon">${stageIcons[s.status] || '·'}</span>`;
+  const dur = s.duration ? `${s.duration}s` : '';
+  row.innerHTML = `
+    <span class="stage-num">${i+1}</span>
+    <span class="stage-name">${s.name}</span>
+    ${icon}
+    <span class="stage-dur">${dur}</span>`;
+  return row;
+}
+
+function renderHistory(history) {
+  const el = document.getElementById('history-list');
+  if (!history || history.length === 0) {
+    el.innerHTML = '<div class="history-row"><span class="h-msg" style="color:var(--dim)">No previous builds yet — run the pipeline first</span></div>';
+    return;
+  }
+  el.innerHTML = history.map(b => {
+    const statusClass = b.status || 'unknown';
+    const icon = b.status === 'success' ? '✓' : b.status === 'failed' ? '✗' : '●';
+    return `<div class="history-row">
+      <span class="h-num">#${b.buildNumber}</span>
+      <span class="h-status ${statusClass}"></span>
+      <span class="h-msg">${icon} Build #${b.buildNumber} — ${b.status || 'unknown'} — v${b.version || '?'}</span>
+      <span class="h-time">${timeAgo(b.finishedAt || b.startedAt)}</span>
+    </div>`;
+  }).join('');
+}
+
+function updateBanner(current) {
+  const banner = document.getElementById('banner');
+  const status = current.status || 'unknown';
+
+  banner.className = `status-banner ${status}`;
+
+  const configs = {
+    success: { icon: '✓', title: `Build #${current.buildNumber} passed — deployed successfully`, sub: `All 7 stages green` },
+    running: { icon: '⟳', title: `Build #${current.buildNumber} is running...`, sub: `Pipeline in progress — watch the stages below` },
+    failed:  { icon: '✗', title: `Build #${current.buildNumber} failed`, sub: `Check Jenkins console for details` },
+    unknown: { icon: '?', title: 'Waiting for first build', sub: 'Go to Jenkins and click Build Now to start' },
+  };
+
+  const cfg = configs[status] || configs.unknown;
+  document.getElementById('banner-icon').textContent = cfg.icon;
+  document.getElementById('banner-title').textContent = cfg.title;
+  document.getElementById('banner-sub').textContent = cfg.sub;
+  document.getElementById('banner-right').innerHTML = `
+    Version: <strong>${current.version || '—'}</strong><br>
+    Started: <strong>${fmtTime(current.startedAt)}</strong><br>
+    Updated: <strong>${fmtTime(current.updatedAt || current.finishedAt)}</strong>`;
+}
+
+// ── main fetch ───────────────────────────────────────────────
+async function fetchAll() {
+  try {
+    const r = await fetch('/api/pipeline');
+    const d = await r.json();
+    const c = d.current;
+
+    updateBanner(c);
+
+    // stages
+    const sl = document.getElementById('stages-list');
+    sl.innerHTML = '';
+    (c.stages || []).forEach((s, i) => sl.appendChild(renderStage(s, i)));
+
+    // build info
+    document.getElementById('m-build').textContent   = '#' + (c.buildNumber || '—');
+    document.getElementById('m-version').textContent = c.version || '—';
+    document.getElementById('m-uptime').textContent  = fmtUptime(d.uptime || 0);
+    document.getElementById('m-trigger').textContent = c.triggeredBy || '—';
+
+    const statusEl = document.getElementById('m-status');
+    statusEl.textContent = c.status || '—';
+    statusEl.className = `metric-v ${c.status === 'success' ? 'green' : c.status === 'failed' ? 'red' : c.status === 'running' ? 'amber' : ''}`;
+
+    // commit
+    document.getElementById('c-hash').textContent   = (c.commit || '—').slice(0,10);
+    document.getElementById('c-branch').textContent = c.branch || 'main';
+    document.getElementById('c-author').textContent = c.author || c.triggeredBy || '—';
+
+    // history
+    renderHistory(d.history);
+
+    // footer
+    document.getElementById('f-status').textContent = c.status === 'success' ? 'ALL GOOD' : c.status === 'running' ? 'RUNNING' : c.status === 'failed' ? 'FAILED' : 'WAITING';
+    document.getElementById('f-time').textContent = 'Updated: ' + new Date().toLocaleTimeString();
+
+  } catch(e) {
+    document.getElementById('banner-title').textContent = 'Cannot reach server — is the app running?';
+    document.getElementById('banner-sub').textContent = 'Make sure docker-compose up --build has been run';
+    document.getElementById('f-time').textContent = 'Error: ' + e.message;
+  }
+}
+
+// auto-refresh every 5 seconds
+fetchAll();
+setInterval(fetchAll, 5000);
+</script>
+</body>
+</html>

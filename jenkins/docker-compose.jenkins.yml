@@ -5,7 +5,7 @@ version: "3.9"
 
 services:
   jenkins:
-    image: jenkins/jenkins:lts-jdk17
+    image: jenkins/jenkins:lts-jdk21
     container_name: jenkins-autodeploy
     restart: unless-stopped
     privileged: true
