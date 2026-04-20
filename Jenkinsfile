@@ -1,14 +1,7 @@
-// ─────────────────────────────────────────────────────────────────
-//  AutoDeploy — Declarative Jenkins Pipeline
-//  FIXED: NodeJS tool binding + Docker socket permissions
-// ─────────────────────────────────────────────────────────────────
-
 pipeline {
 
     agent any
 
-    // FIX 1: This tells Jenkins to use the NodeJS tool you configured
-    // (Manage Jenkins → Tools → NodeJS → named "NodeJS-20")
     tools {
         nodejs 'NodeJS-20'
     }
@@ -37,7 +30,6 @@ pipeline {
 
     stages {
 
-        // ── STAGE 1: Clone Repository ─────────────────────────
         stage('Clone Repository') {
             steps {
                 echo "════════════════════════════════════════"
@@ -50,10 +42,20 @@ pipeline {
                     echo "   Commit : $(git rev-parse --short HEAD 2>/dev/null || echo N/A)"
                     echo "   Author : $(git log -1 --pretty=format:'%an' 2>/dev/null || echo N/A)"
                 '''
+                // Notify dashboard — pipeline started
+                sh """
+                    APP_IP=\$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CONTAINER_NAME} 2>/dev/null || echo '')
+                    COMMIT=\$(git rev-parse --short HEAD 2>/dev/null || echo unknown)
+                    AUTHOR=\$(git log -1 --pretty=format:'%an' 2>/dev/null || echo unknown)
+                    if [ -n "\$APP_IP" ]; then
+                        curl -sf -X POST http://\$APP_IP:3000/api/pipeline \
+                          -H 'Content-Type: application/json' \
+                          -d "{\\"buildNumber\\":\\"${BUILD_NUMBER}\\",\\"status\\":\\"running\\",\\"version\\":\\"${APP_VERSION}\\",\\"triggeredBy\\":\\"${BUILD_USER_ID:-jenkins}\\",\\"commit\\":\\"\$COMMIT\\",\\"author\\":\\"\$AUTHOR\\",\\"branch\\":\\"main\\",\\"startedAt\\":\\"\$(date -u +%Y-%m-%dT%H:%M:%SZ)\\",\\"stages\\":[{\\"name\\":\\"Clone Repository\\",\\"status\\":\\"success\\"},{\\"name\\":\\"Install Dependencies\\",\\"status\\":\\"running\\"},{\\"name\\":\\"Run Tests\\",\\"status\\":\\"pending\\"},{\\"name\\":\\"Build Docker Image\\",\\"status\\":\\"pending\\"},{\\"name\\":\\"Tag Image\\",\\"status\\":\\"pending\\"},{\\"name\\":\\"Deploy Container\\",\\"status\\":\\"pending\\"},{\\"name\\":\\"Verify Deployment\\",\\"status\\":\\"pending\\"}]}" || true
+                    fi
+                """
             }
         }
 
-        // ── STAGE 2: Install Dependencies ────────────────────
         stage('Install Dependencies') {
             steps {
                 echo "════════════════════════════════════════"
@@ -65,10 +67,17 @@ pipeline {
                     npm install
                     echo "Dependencies installed"
                 '''
+                sh """
+                    APP_IP=\$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CONTAINER_NAME} 2>/dev/null || echo '')
+                    if [ -n "\$APP_IP" ]; then
+                        curl -sf -X POST http://\$APP_IP:3000/api/pipeline \
+                          -H 'Content-Type: application/json' \
+                          -d "{\\"buildNumber\\":\\"${BUILD_NUMBER}\\",\\"status\\":\\"running\\",\\"stages\\":[{\\"name\\":\\"Clone Repository\\",\\"status\\":\\"success\\"},{\\"name\\":\\"Install Dependencies\\",\\"status\\":\\"success\\"},{\\"name\\":\\"Run Tests\\",\\"status\\":\\"running\\"},{\\"name\\":\\"Build Docker Image\\",\\"status\\":\\"pending\\"},{\\"name\\":\\"Tag Image\\",\\"status\\":\\"pending\\"},{\\"name\\":\\"Deploy Container\\",\\"status\\":\\"pending\\"},{\\"name\\":\\"Verify Deployment\\",\\"status\\":\\"pending\\"}]}" || true
+                    fi
+                """
             }
         }
 
-        // ── STAGE 3: Run Tests ───────────────────────────────
         stage('Run Tests') {
             environment {
                 NODE_ENV = 'test'
@@ -79,10 +88,17 @@ pipeline {
                 echo "════════════════════════════════════════"
                 sh 'npm run test:ci'
                 echo "All tests passed"
+                sh """
+                    APP_IP=\$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CONTAINER_NAME} 2>/dev/null || echo '')
+                    if [ -n "\$APP_IP" ]; then
+                        curl -sf -X POST http://\$APP_IP:3000/api/pipeline \
+                          -H 'Content-Type: application/json' \
+                          -d "{\\"buildNumber\\":\\"${BUILD_NUMBER}\\",\\"status\\":\\"running\\",\\"stages\\":[{\\"name\\":\\"Clone Repository\\",\\"status\\":\\"success\\"},{\\"name\\":\\"Install Dependencies\\",\\"status\\":\\"success\\"},{\\"name\\":\\"Run Tests\\",\\"status\\":\\"success\\"},{\\"name\\":\\"Build Docker Image\\",\\"status\\":\\"running\\"},{\\"name\\":\\"Tag Image\\",\\"status\\":\\"pending\\"},{\\"name\\":\\"Deploy Container\\",\\"status\\":\\"pending\\"},{\\"name\\":\\"Verify Deployment\\",\\"status\\":\\"pending\\"}]}" || true
+                    fi
+                """
             }
         }
 
-        // ── STAGE 4: Build Docker Image ───────────────────────
         stage('Build Docker Image') {
             steps {
                 echo "════════════════════════════════════════"
@@ -98,10 +114,17 @@ pipeline {
                         .
                     echo "Docker image built: ${IMAGE_TAG}"
                 """
+                sh """
+                    APP_IP=\$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CONTAINER_NAME} 2>/dev/null || echo '')
+                    if [ -n "\$APP_IP" ]; then
+                        curl -sf -X POST http://\$APP_IP:3000/api/pipeline \
+                          -H 'Content-Type: application/json' \
+                          -d "{\\"buildNumber\\":\\"${BUILD_NUMBER}\\",\\"status\\":\\"running\\",\\"stages\\":[{\\"name\\":\\"Clone Repository\\",\\"status\\":\\"success\\"},{\\"name\\":\\"Install Dependencies\\",\\"status\\":\\"success\\"},{\\"name\\":\\"Run Tests\\",\\"status\\":\\"success\\"},{\\"name\\":\\"Build Docker Image\\",\\"status\\":\\"success\\"},{\\"name\\":\\"Tag Image\\",\\"status\\":\\"running\\"},{\\"name\\":\\"Deploy Container\\",\\"status\\":\\"pending\\"},{\\"name\\":\\"Verify Deployment\\",\\"status\\":\\"pending\\"}]}" || true
+                    fi
+                """
             }
         }
 
-        // ── STAGE 5: Tag Image ────────────────────────────────
         stage('Tag Image') {
             steps {
                 echo "════════════════════════════════════════"
@@ -114,10 +137,17 @@ pipeline {
                     echo "Tags created: ${IMAGE_TAG}, build-${BUILD_NUMBER}, git-\${GIT_HASH}"
                     docker images ${IMAGE_NAME}
                 """
+                sh """
+                    APP_IP=\$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CONTAINER_NAME} 2>/dev/null || echo '')
+                    if [ -n "\$APP_IP" ]; then
+                        curl -sf -X POST http://\$APP_IP:3000/api/pipeline \
+                          -H 'Content-Type: application/json' \
+                          -d "{\\"buildNumber\\":\\"${BUILD_NUMBER}\\",\\"status\\":\\"running\\",\\"stages\\":[{\\"name\\":\\"Clone Repository\\",\\"status\\":\\"success\\"},{\\"name\\":\\"Install Dependencies\\",\\"status\\":\\"success\\"},{\\"name\\":\\"Run Tests\\",\\"status\\":\\"success\\"},{\\"name\\":\\"Build Docker Image\\",\\"status\\":\\"success\\"},{\\"name\\":\\"Tag Image\\",\\"status\\":\\"success\\"},{\\"name\\":\\"Deploy Container\\",\\"status\\":\\"running\\"},{\\"name\\":\\"Verify Deployment\\",\\"status\\":\\"pending\\"}]}" || true
+                    fi
+                """
             }
         }
 
-        // ── STAGE 6: Deploy Container ─────────────────────────
         stage('Deploy Container') {
             steps {
                 echo "════════════════════════════════════════"
@@ -144,7 +174,6 @@ pipeline {
             }
         }
 
-        // ── STAGE 7: Verify Deployment ────────────────────────
         stage('Verify Deployment') {
             steps {
                 echo "════════════════════════════════════════"
@@ -153,7 +182,6 @@ pipeline {
                 sh """
                     sleep 8
 
-                    # Get the container's own IP address (Jenkins and app are separate containers)
                     APP_IP=\$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CONTAINER_NAME})
                     echo "Container IP: \$APP_IP"
 
@@ -173,7 +201,13 @@ pipeline {
                         exit 1
                     fi
 
+                    // Final success update to dashboard
+                    curl -sf -X POST http://\$APP_IP:3000/api/pipeline \
+                      -H 'Content-Type: application/json' \
+                      -d "{\\"buildNumber\\":\\"${BUILD_NUMBER}\\",\\"status\\":\\"success\\",\\"version\\":\\"${APP_VERSION}\\",\\"finishedAt\\":\\"\$(date -u +%Y-%m-%dT%H:%M:%SZ)\\",\\"stages\\":[{\\"name\\":\\"Clone Repository\\",\\"status\\":\\"success\\"},{\\"name\\":\\"Install Dependencies\\",\\"status\\":\\"success\\"},{\\"name\\":\\"Run Tests\\",\\"status\\":\\"success\\"},{\\"name\\":\\"Build Docker Image\\",\\"status\\":\\"success\\"},{\\"name\\":\\"Tag Image\\",\\"status\\":\\"success\\"},{\\"name\\":\\"Deploy Container\\",\\"status\\":\\"success\\"},{\\"name\\":\\"Verify Deployment\\",\\"status\\":\\"success\\"}]}" || true
+
                     echo "DEPLOYMENT SUCCESSFUL — http://localhost:${APP_PORT}"
+                    echo "PIPELINE DASHBOARD  — http://localhost:${APP_PORT}/pipeline"
                 """
             }
         }
@@ -181,12 +215,15 @@ pipeline {
     }
 
     post {
-        success {
-            echo "PIPELINE PASSED — Build #${BUILD_NUMBER} deployed"
-        }
         failure {
             echo "PIPELINE FAILED"
             sh """
+                APP_IP=\$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CONTAINER_NAME} 2>/dev/null || echo '')
+                if [ -n "\$APP_IP" ]; then
+                    curl -sf -X POST http://\$APP_IP:3000/api/pipeline \
+                      -H 'Content-Type: application/json' \
+                      -d "{\\"buildNumber\\":\\"${BUILD_NUMBER}\\",\\"status\\":\\"failed\\",\\"finishedAt\\":\\"\$(date -u +%Y-%m-%dT%H:%M:%SZ)\\"}" || true
+                fi
                 PREV=\$((${BUILD_NUMBER} - 1))
                 PREV_IMG="${IMAGE_NAME}:${APP_VERSION}-\${PREV}"
                 if docker image inspect \${PREV_IMG} > /dev/null 2>&1; then
@@ -198,7 +235,7 @@ pipeline {
                 else
                     echo "No previous image to roll back to"
                 fi
-            """ 
+            """
         }
         always {
             sh "docker images ${IMAGE_NAME} 2>/dev/null || true"
