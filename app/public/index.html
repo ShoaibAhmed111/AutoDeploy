@@ -1,442 +1,358 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AutoDeploy — CI/CD Dashboard</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;600;700&display=swap" rel="stylesheet" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AutoDrive Motors — Premium Cars</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --black:    #0a0a0a;
-      --dark:     #111214;
-      --panel:    #181a1e;
-      --border:   #2a2d35;
-      --muted:    #3a3d48;
-      --dim:      #6b7080;
-      --text:     #d4d8e8;
-      --bright:   #edf0ff;
-      --green:    #00e676;
-      --green-dim:#00864a;
-      --amber:    #ffab00;
-      --blue:     #448aff;
-      --red:      #ff5252;
-      --cyan:     #18ffff;
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --red:#e8001d;
+      --dark:#0f0f0f;
+      --darker:#080808;
+      --card:#161616;
+      --border:#222;
+      --text:#e0e0e0;
+      --muted:#888;
+      --white:#ffffff;
     }
+    html{scroll-behavior:smooth}
+    body{background:var(--dark);color:var(--text);font-family:'Inter',sans-serif;overflow-x:hidden}
 
-    html { font-size: 14px; }
+    nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(8,8,8,.93);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 5%}
+    .nav-inner{display:flex;align-items:center;justify-content:space-between;height:64px}
+    .nav-logo{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--white);letter-spacing:2px}
+    .nav-logo span{color:var(--red)}
+    .nav-links{display:flex;gap:32px;list-style:none}
+    .nav-links a{color:var(--muted);text-decoration:none;font-size:.85rem;font-weight:500;letter-spacing:.5px;text-transform:uppercase;transition:color .2s}
+    .nav-links a:hover{color:var(--white)}
+    .nav-cta{background:var(--red);color:var(--white);border:none;padding:10px 22px;border-radius:4px;font-size:.82rem;font-weight:600;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;transition:opacity .2s}
+    .nav-cta:hover{opacity:.85}
+    @media(max-width:700px){.nav-links{display:none}}
 
-    body {
-      background: var(--black);
-      color: var(--text);
-      font-family: 'IBM Plex Sans', sans-serif;
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
+    .hero{min-height:100vh;display:flex;align-items:center;padding:80px 5% 60px;position:relative;overflow:hidden}
+    .hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 70% 50%,rgba(232,0,29,.12) 0%,transparent 60%),linear-gradient(135deg,#080808 0%,#0f0f0f 100%);z-index:0}
+    .hero-bg::after{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.02) 1px,transparent 1px);background-size:60px 60px;z-index:0}
+    .hero-content{position:relative;z-index:1;max-width:580px}
+    .hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(232,0,29,.12);border:1px solid rgba(232,0,29,.3);color:var(--red);font-size:.72rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;padding:6px 14px;border-radius:20px;margin-bottom:28px}
+    .hero-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--red);animation:bdot 1.2s ease-in-out infinite}
+    @keyframes bdot{0%,100%{opacity:1}50%{opacity:.3}}
+    .hero h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(3.5rem,8vw,6.5rem);line-height:.95;color:var(--white);margin-bottom:24px;letter-spacing:2px}
+    .hero h1 span{color:var(--red)}
+    .hero p{font-size:1.05rem;color:var(--muted);line-height:1.7;margin-bottom:36px;max-width:440px}
+    .hero-btns{display:flex;gap:14px;flex-wrap:wrap}
+    .btn-primary{background:var(--red);color:var(--white);border:none;padding:14px 32px;border-radius:4px;font-size:.9rem;font-weight:600;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;transition:all .2s;text-decoration:none;display:inline-block}
+    .btn-primary:hover{background:#c8001a;transform:translateY(-1px)}
+    .btn-outline{background:transparent;color:var(--white);border:1px solid var(--border);padding:14px 32px;border-radius:4px;font-size:.9rem;font-weight:500;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;transition:all .2s;text-decoration:none;display:inline-block}
+    .btn-outline:hover{border-color:var(--white)}
+    .hero-stats{display:flex;gap:40px;margin-top:52px;padding-top:32px;border-top:1px solid var(--border);flex-wrap:wrap}
+    .stat-num{font-family:'Bebas Neue',sans-serif;font-size:2.4rem;color:var(--white);letter-spacing:1px}
+    .stat-label{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px}
 
-    /* Grid scan-line overlay */
-    body::before {
-      content: '';
-      position: fixed; inset: 0; z-index: 0; pointer-events: none;
-      background-image:
-        repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,.012) 2px, rgba(255,255,255,.012) 4px);
-      mix-blend-mode: overlay;
-    }
+    section{padding:90px 5%}
+    .section-label{font-size:.72rem;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--red);margin-bottom:12px}
+    .section-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.2rem,5vw,3.5rem);color:var(--white);letter-spacing:1px;line-height:1.05;margin-bottom:16px}
+    .section-sub{color:var(--muted);font-size:.95rem;line-height:1.7;max-width:500px}
 
-    .wrap { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 0 24px 60px; }
+    #cars{background:var(--darker)}
+    .cars-header{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:48px;flex-wrap:wrap;gap:20px}
+    .cars-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px}
+    .car-card{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;transition:transform .2s,border-color .2s;cursor:pointer;animation:fadeup .4s ease both}
+    .car-card:nth-child(2){animation-delay:.08s}.car-card:nth-child(3){animation-delay:.16s}.car-card:nth-child(4){animation-delay:.24s}.car-card:nth-child(5){animation-delay:.32s}.car-card:nth-child(6){animation-delay:.40s}
+    .car-card:hover{transform:translateY(-4px);border-color:#333}
+    .car-svg{width:100%;height:200px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a1a1a,#222)}
+    .car-svg svg{width:200px;opacity:.75}
+    .car-body{padding:20px}
+    .car-tag{font-size:.65rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--red);margin-bottom:8px}
+    .car-name{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:var(--white);letter-spacing:1px;margin-bottom:6px}
+    .car-specs{display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+    .spec{font-size:.7rem;color:var(--muted);display:flex;align-items:center;gap:4px}
+    .spec::before{content:'';width:4px;height:4px;border-radius:50%;background:var(--red);flex-shrink:0}
+    .car-desc{font-size:.8rem;color:var(--muted);line-height:1.6;margin-bottom:16px}
+    .car-footer{display:flex;align-items:center;justify-content:space-between}
+    .car-price{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--white)}
+    .car-price span{font-family:'Inter',sans-serif;font-size:.7rem;color:var(--muted);font-weight:400}
+    .car-btn{background:transparent;border:1px solid var(--border);color:var(--text);padding:7px 16px;border-radius:4px;font-size:.75rem;font-weight:600;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;transition:all .2s}
+    .car-btn:hover{background:var(--red);border-color:var(--red);color:var(--white)}
 
-    /* ── HEADER ── */
-    header {
-      border-bottom: 1px solid var(--border);
-      padding: 20px 0 16px;
-      display: flex; align-items: center; justify-content: space-between;
-      gap: 16px; flex-wrap: wrap;
-    }
-    .logo {
-      display: flex; align-items: center; gap: 14px;
-    }
-    .logo-icon {
-      width: 36px; height: 36px; background: var(--green); border-radius: 6px;
-      display: grid; place-items: center;
-      box-shadow: 0 0 18px rgba(0,230,118,.45);
-    }
-    .logo-icon svg { width: 20px; height: 20px; fill: var(--black); }
-    .logo-text { font-family: 'IBM Plex Mono', monospace; font-size: 1.3rem; font-weight: 600; color: var(--bright); letter-spacing: -0.5px; }
-    .logo-text span { color: var(--green); }
-    .header-meta { font-family: 'IBM Plex Mono', monospace; font-size: .72rem; color: var(--dim); text-align: right; line-height: 1.6; }
-    .header-meta strong { color: var(--amber); }
+    .services-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px;margin-top:48px}
+    .service-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:28px 24px;transition:border-color .2s}
+    .service-card:hover{border-color:#333}
+    .service-icon{width:44px;height:44px;background:rgba(232,0,29,.1);border:1px solid rgba(232,0,29,.2);border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:18px}
+    .service-icon svg{width:22px;height:22px;fill:var(--red)}
+    .service-title{font-weight:600;color:var(--white);font-size:.95rem;margin-bottom:8px}
+    .service-desc{font-size:.8rem;color:var(--muted);line-height:1.65}
 
-    /* ── PIPELINE STATUS BAR ── */
-    .pipeline-bar {
-      margin: 28px 0;
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 16px 20px;
-      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-    }
-    .pipe-label { font-family: 'IBM Plex Mono', monospace; font-size: .7rem; color: var(--dim); margin-right: 8px; text-transform: uppercase; letter-spacing: 1px; }
-    .stage {
-      display: flex; align-items: center; gap: 6px;
-      background: var(--dark); border: 1px solid var(--border);
-      border-radius: 4px; padding: 5px 10px;
-      font-family: 'IBM Plex Mono', monospace; font-size: .72rem; color: var(--dim);
-      transition: all .3s;
-    }
-    .stage.done   { border-color: var(--green-dim); color: var(--green); background: rgba(0,230,118,.06); }
-    .stage.active { border-color: var(--amber); color: var(--amber); background: rgba(255,171,0,.06); animation: pulse-border 1.2s ease-in-out infinite; }
-    .stage.fail   { border-color: var(--red); color: var(--red); background: rgba(255,82,82,.06); }
-    @keyframes pulse-border { 0%,100% { box-shadow: 0 0 0 0 rgba(255,171,0,.3); } 50% { box-shadow: 0 0 0 4px rgba(255,171,0,.0); } }
-    .stage-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-    .stage.active .stage-dot { animation: blink .8s ease-in-out infinite; }
-    @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: .2; } }
-    .pipe-arrow { color: var(--muted); font-family: 'IBM Plex Mono', monospace; font-size: .8rem; }
+    #testimonials{background:var(--darker)}
+    .testimonials-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-top:48px}
+    .tcard{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:24px}
+    .stars{color:var(--red);font-size:.9rem;margin-bottom:12px;letter-spacing:2px}
+    .tquote{font-size:.85rem;color:var(--text);line-height:1.7;margin-bottom:18px;font-style:italic}
+    .tauthor{display:flex;align-items:center;gap:10px}
+    .tavatar{width:36px;height:36px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;color:var(--white);flex-shrink:0}
+    .tname{font-size:.82rem;font-weight:600;color:var(--white)}
+    .trole{font-size:.72rem;color:var(--muted)}
 
-    /* ── GRID ── */
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-    @media (max-width: 640px) { .grid { grid-template-columns: 1fr; } }
-    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 16px; }
-    @media (max-width: 700px) { .grid-3 { grid-template-columns: 1fr; } }
+    .cta-section{background:var(--red);padding:70px 5%;text-align:center}
+    .cta-section h2{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,5vw,3.5rem);color:var(--white);letter-spacing:2px;margin-bottom:14px}
+    .cta-section p{color:rgba(255,255,255,.75);font-size:.95rem;margin-bottom:32px}
+    .btn-white{background:var(--white);color:var(--red);border:none;padding:14px 36px;border-radius:4px;font-size:.9rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;transition:opacity .2s}
+    .btn-white:hover{opacity:.9}
 
-    /* ── CARDS ── */
-    .card {
-      background: var(--panel); border: 1px solid var(--border);
-      border-radius: 8px; padding: 20px;
-      position: relative; overflow: hidden;
-      transition: border-color .2s;
-    }
-    .card:hover { border-color: var(--muted); }
-    .card-accent-green::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--green); box-shadow: 0 0 12px var(--green); }
-    .card-accent-blue::after  { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--blue); box-shadow: 0 0 12px var(--blue); }
-    .card-accent-amber::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--amber); box-shadow: 0 0 12px var(--amber); }
-    .card-accent-cyan::after  { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--cyan); box-shadow: 0 0 12px var(--cyan); }
+    .contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:48px;margin-top:48px}
+    @media(max-width:680px){.contact-grid{grid-template-columns:1fr}}
+    .contact-info{display:flex;flex-direction:column;gap:20px}
+    .contact-item{display:flex;gap:14px;align-items:flex-start}
+    .c-icon{width:40px;height:40px;background:rgba(232,0,29,.1);border:1px solid rgba(232,0,29,.2);border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .c-icon svg{width:18px;height:18px;fill:var(--red)}
+    .c-label{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px}
+    .c-val{font-size:.9rem;color:var(--white);font-weight:500}
+    .contact-form{display:flex;flex-direction:column;gap:14px}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .form-group{display:flex;flex-direction:column;gap:6px}
+    .form-group label{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.8px}
+    .form-group input,.form-group select,.form-group textarea{background:var(--card);border:1px solid var(--border);color:var(--text);padding:11px 14px;border-radius:5px;font-size:.85rem;font-family:'Inter',sans-serif;transition:border-color .2s;outline:none;resize:none}
+    .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--red)}
+    .form-group select option{background:var(--card)}
+    .form-submit{background:var(--red);color:var(--white);border:none;padding:13px;border-radius:5px;font-size:.85rem;font-weight:600;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;transition:opacity .2s}
+    .form-submit:hover{opacity:.85}
+    .form-msg{display:none;background:rgba(0,200,100,.1);border:1px solid rgba(0,200,100,.3);color:#00c864;padding:10px 14px;border-radius:5px;font-size:.82rem;text-align:center}
 
-    .card-title {
-      font-family: 'IBM Plex Mono', monospace; font-size: .7rem;
-      text-transform: uppercase; letter-spacing: 1.2px;
-      color: var(--dim); margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
-    }
-    .card-title .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); display: inline-block; }
-    .card-title .dot.amber { background: var(--amber); }
-    .card-title .dot.blue  { background: var(--blue); }
-    .card-title .dot.cyan  { background: var(--cyan); }
+    footer{background:var(--darker);border-top:1px solid var(--border);padding:40px 5% 24px}
+    .footer-top{display:flex;justify-content:space-between;flex-wrap:wrap;gap:32px;margin-bottom:32px}
+    .footer-brand p{font-size:.78rem;color:var(--muted);max-width:220px;line-height:1.7;margin-top:10px}
+    .footer-col h4{font-size:.72rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--white);margin-bottom:14px}
+    .footer-col ul{list-style:none;display:flex;flex-direction:column;gap:9px}
+    .footer-col ul a{font-size:.8rem;color:var(--muted);text-decoration:none;transition:color .2s}
+    .footer-col ul a:hover{color:var(--white)}
+    .footer-bottom{border-top:1px solid var(--border);padding-top:20px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+    .footer-bottom span{font-size:.72rem;color:var(--muted)}
+    .footer-bottom a{color:var(--red);text-decoration:none;font-size:.72rem}
 
-    /* Status indicator */
-    .status-badge {
-      display: inline-flex; align-items: center; gap: 6px;
-      font-family: 'IBM Plex Mono', monospace; font-size: .78rem;
-      padding: 4px 10px; border-radius: 3px;
-    }
-    .status-badge.ok   { background: rgba(0,230,118,.1); color: var(--green); border: 1px solid var(--green-dim); }
-    .status-badge.warn { background: rgba(255,171,0,.1); color: var(--amber); border: 1px solid rgba(255,171,0,.4); }
-    .status-badge.err  { background: rgba(255,82,82,.1); color: var(--red); border: 1px solid rgba(255,82,82,.4); }
-    .status-badge::before { content: '●'; font-size: .6rem; }
+    .build-badge{position:fixed;bottom:16px;right:16px;background:rgba(8,8,8,.92);border:1px solid var(--border);border-radius:6px;padding:7px 12px;font-size:.65rem;color:var(--muted);font-family:monospace;backdrop-filter:blur(8px);z-index:50;display:flex;align-items:center;gap:6px;text-decoration:none;transition:border-color .2s}
+    .build-badge:hover{border-color:#444}
+    .build-badge .dot{width:5px;height:5px;border-radius:50%;background:#00e676;flex-shrink:0}
+    .build-badge span{color:var(--white)}
 
-    /* Big stat */
-    .big-stat { font-family: 'IBM Plex Mono', monospace; font-size: 2.2rem; font-weight: 600; color: var(--bright); line-height: 1; }
-    .big-stat-label { font-size: .72rem; color: var(--dim); margin-top: 4px; }
-
-    /* JSON terminal */
-    .terminal {
-      background: var(--dark); border: 1px solid var(--border);
-      border-radius: 6px; padding: 14px 16px;
-      font-family: 'IBM Plex Mono', monospace; font-size: .78rem;
-      line-height: 1.7; white-space: pre-wrap; word-break: break-all;
-      color: var(--text); min-height: 80px;
-    }
-    .terminal .key   { color: var(--blue); }
-    .terminal .str   { color: var(--green); }
-    .terminal .num   { color: var(--amber); }
-    .terminal .bool  { color: var(--cyan); }
-    .terminal .null  { color: var(--red); }
-    .loading-dots::after { content: '...'; animation: ldots 1.2s steps(4, end) infinite; }
-    @keyframes ldots { 0%{content:'.'} 33%{content:'..'} 66%{content:'...'} 100%{content:'.'} }
-
-    /* Button */
-    .btn {
-      font-family: 'IBM Plex Mono', monospace; font-size: .78rem; font-weight: 500;
-      border: 1px solid; border-radius: 4px; padding: 8px 16px; cursor: pointer;
-      letter-spacing: .5px; transition: all .15s; display: inline-flex; align-items: center; gap: 7px;
-      background: transparent;
-    }
-    .btn-green { color: var(--green); border-color: var(--green-dim); }
-    .btn-green:hover { background: rgba(0,230,118,.1); box-shadow: 0 0 12px rgba(0,230,118,.2); }
-    .btn-blue  { color: var(--blue);  border-color: rgba(68,138,255,.4); }
-    .btn-blue:hover  { background: rgba(68,138,255,.1); }
-    .btn-group { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
-
-    /* Metric row */
-    .metric-row { display: flex; justify-content: space-between; align-items: baseline; padding: 7px 0; border-bottom: 1px solid var(--border); }
-    .metric-row:last-child { border-bottom: none; }
-    .metric-key { font-family: 'IBM Plex Mono', monospace; font-size: .73rem; color: var(--dim); }
-    .metric-val { font-family: 'IBM Plex Mono', monospace; font-size: .8rem; color: var(--text); }
-    .metric-val.green { color: var(--green); }
-    .metric-val.amber { color: var(--amber); }
-    .metric-val.blue  { color: var(--blue); }
-
-    /* Log stream */
-    .log-stream {
-      background: var(--dark); border: 1px solid var(--border); border-radius: 6px;
-      padding: 12px; max-height: 200px; overflow-y: auto;
-      font-family: 'IBM Plex Mono', monospace; font-size: .72rem; line-height: 1.8;
-    }
-    .log-stream::-webkit-scrollbar { width: 4px; }
-    .log-stream::-webkit-scrollbar-track { background: var(--dark); }
-    .log-stream::-webkit-scrollbar-thumb { background: var(--muted); border-radius: 2px; }
-    .log-line { display: flex; gap: 10px; }
-    .log-ts { color: var(--dim); flex-shrink: 0; }
-    .log-msg.info  { color: var(--text); }
-    .log-msg.ok    { color: var(--green); }
-    .log-msg.warn  { color: var(--amber); }
-    .log-msg.err   { color: var(--red); }
-
-    /* Progress bar */
-    .progress-wrap { margin-top: 10px; }
-    .progress-label { display: flex; justify-content: space-between; font-family: 'IBM Plex Mono', monospace; font-size: .7rem; color: var(--dim); margin-bottom: 5px; }
-    .progress-bar { height: 4px; background: var(--muted); border-radius: 2px; overflow: hidden; }
-    .progress-fill { height: 100%; background: var(--green); border-radius: 2px; box-shadow: 0 0 8px var(--green); transition: width .5s ease; }
-    .progress-fill.blue  { background: var(--blue); box-shadow: 0 0 8px var(--blue); }
-    .progress-fill.amber { background: var(--amber); box-shadow: 0 0 8px var(--amber); }
-
-    /* Footer */
-    footer { border-top: 1px solid var(--border); padding: 18px 0 0; margin-top: 40px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
-    footer span { font-family: 'IBM Plex Mono', monospace; font-size: .68rem; color: var(--dim); }
-    footer strong { color: var(--green); }
-
-    /* Glow effect on load */
-    @keyframes fade-up { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-    .card { animation: fade-up .4s ease both; }
-    .card:nth-child(1) { animation-delay: .05s; }
-    .card:nth-child(2) { animation-delay: .1s; }
-    .card:nth-child(3) { animation-delay: .15s; }
+    @keyframes fadeup{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+    .hero-content{animation:fadeup .6s ease both}
   </style>
 </head>
 <body>
-<div class="wrap">
 
-  <!-- HEADER -->
-  <header>
-    <div class="logo">
-      <div class="logo-icon">
-        <svg viewBox="0 0 24 24"><path d="M4 4h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4zM4 10h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4zM4 16h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4z"/></svg>
-      </div>
-      <div class="logo-text">Auto<span>Deploy</span></div>
-    </div>
-    <div class="header-meta">
-      <div>CI/CD PIPELINE DASHBOARD</div>
-      <div>HOST: <strong id="hdr-host">localhost:3000</strong> &nbsp;|&nbsp; ENV: <strong id="hdr-env">—</strong></div>
-    </div>
-  </header>
-
-  <!-- PIPELINE STATUS BAR -->
-  <div class="pipeline-bar">
-    <span class="pipe-label">Pipeline</span>
-    <div class="stage done" id="stage-clone"><span class="stage-dot"></span>Clone</div>
-    <span class="pipe-arrow">›</span>
-    <div class="stage done" id="stage-deps"><span class="stage-dot"></span>Install</div>
-    <span class="pipe-arrow">›</span>
-    <div class="stage done" id="stage-test"><span class="stage-dot"></span>Test</div>
-    <span class="pipe-arrow">›</span>
-    <div class="stage done" id="stage-build"><span class="stage-dot"></span>Build Image</div>
-    <span class="pipe-arrow">›</span>
-    <div class="stage done" id="stage-tag"><span class="stage-dot"></span>Tag</div>
-    <span class="pipe-arrow">›</span>
-    <div class="stage active" id="stage-deploy"><span class="stage-dot"></span>Deploy</div>
+<nav>
+  <div class="nav-inner">
+    <div class="nav-logo">Auto<span>Drive</span> Motors</div>
+    <ul class="nav-links">
+      <li><a href="#cars">Inventory</a></li>
+      <li><a href="#services">Services</a></li>
+      <li><a href="#testimonials">Reviews</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+    <button class="nav-cta" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'})">Book Test Drive</button>
   </div>
+</nav>
 
-  <!-- ROW 1: health + message -->
-  <div class="grid">
-    <div class="card card-accent-green">
-      <div class="card-title"><span class="dot"></span>Health Check &mdash; /health</div>
-      <div id="health-badge" class="status-badge warn">loading</div>
-      <div class="terminal" id="health-out" style="margin-top:12px"><span class="loading-dots">fetching</span></div>
-      <div class="btn-group">
-        <button class="btn btn-green" onclick="fetchHealth()">⟳ Refresh</button>
-      </div>
+<section class="hero" id="home">
+  <div class="hero-bg"></div>
+  <div class="hero-content">
+    <div class="hero-badge">New Arrivals 2025</div>
+    <h1>Drive Your<br/><span>Dream</span><br/>Car Today</h1>
+    <p>Premium vehicles, transparent pricing, and an experience that puts you in the driver's seat from day one.</p>
+    <div class="hero-btns">
+      <a href="#cars" class="btn-primary">Browse Inventory</a>
+      <a href="#contact" class="btn-outline">Book Test Drive</a>
     </div>
-
-    <div class="card card-accent-blue">
-      <div class="card-title"><span class="dot blue"></span>API Response &mdash; /api/message</div>
-      <div id="msg-badge" class="status-badge warn">loading</div>
-      <div class="terminal" id="msg-out" style="margin-top:12px"><span class="loading-dots">fetching</span></div>
-      <div class="btn-group">
-        <button class="btn btn-blue" onclick="fetchMessage()">⟳ Refresh</button>
-        <button class="btn btn-blue" onclick="fetchStatus()">⊞ Status</button>
-      </div>
+    <div class="hero-stats">
+      <div><div class="stat-num">340+</div><div class="stat-label">Cars in Stock</div></div>
+      <div><div class="stat-num">12K+</div><div class="stat-label">Happy Customers</div></div>
+      <div><div class="stat-num">18</div><div class="stat-label">Years in Business</div></div>
     </div>
   </div>
+</section>
 
-  <!-- ROW 2: metrics + log -->
-  <div class="grid-3">
-    <div class="card card-accent-amber">
-      <div class="card-title"><span class="dot amber"></span>Runtime Metrics</div>
-      <div class="metric-row"><span class="metric-key">version</span><span class="metric-val green" id="m-version">—</span></div>
-      <div class="metric-row"><span class="metric-key">build #</span><span class="metric-val amber" id="m-build">—</span></div>
-      <div class="metric-row"><span class="metric-key">uptime</span><span class="metric-val blue" id="m-uptime">—</span></div>
-      <div class="metric-row"><span class="metric-key">node</span><span class="metric-val" id="m-node">—</span></div>
-      <div class="metric-row"><span class="metric-key">platform</span><span class="metric-val" id="m-platform">—</span></div>
+<section id="cars">
+  <div class="cars-header">
+    <div>
+      <div class="section-label">Our Inventory</div>
+      <div class="section-title">Featured Vehicles</div>
+    </div>
+    <a href="#contact" class="btn-outline" style="font-size:.78rem;padding:10px 20px">View All 340+ Cars</a>
+  </div>
+  <div class="cars-grid">
+
+    <div class="car-card">
+      <div class="car-svg"><svg viewBox="0 0 200 80" fill="none"><rect x="20" y="35" width="160" height="28" rx="4" fill="#2a2a2a"/><path d="M40 35 L60 15 L140 15 L160 35" fill="#333" stroke="#444" stroke-width="1"/><circle cx="55" cy="63" r="10" fill="#1a1a1a" stroke="#555" stroke-width="2"/><circle cx="55" cy="63" r="5" fill="#333"/><circle cx="145" cy="63" r="10" fill="#1a1a1a" stroke="#555" stroke-width="2"/><circle cx="145" cy="63" r="5" fill="#333"/><rect x="62" y="18" width="76" height="15" rx="2" fill="#1e3a5f" opacity=".8"/><rect x="158" y="40" width="10" height="6" rx="2" fill="#e8001d" opacity=".6"/><rect x="32" y="40" width="10" height="6" rx="2" fill="#ffcc00" opacity=".5"/></svg></div>
+      <div class="car-body">
+        <div class="car-tag">Sedan · New</div>
+        <div class="car-name">Phantom GT 500</div>
+        <div class="car-specs"><span class="spec">3.0L V6</span><span class="spec">420 HP</span><span class="spec">Auto</span><span class="spec">AWD</span></div>
+        <div class="car-desc">A refined performance sedan with cutting-edge tech, premium leather, and a turbocharged engine that delivers pure driving joy.</div>
+        <div class="car-footer"><div class="car-price">$52,900 <span>starting</span></div><button class="car-btn" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'})">Enquire</button></div>
+      </div>
     </div>
 
-    <div class="card card-accent-cyan" style="grid-column: span 2;">
-      <div class="card-title"><span class="dot cyan"></span>Live Request Log</div>
-      <div class="log-stream" id="log-stream">
-        <div class="log-line"><span class="log-ts">00:00:00</span><span class="log-msg info">Dashboard initialised</span></div>
-      </div>
-      <div class="btn-group">
-        <button class="btn btn-green" onclick="pingAll()">⟳ Ping All Endpoints</button>
-        <button class="btn btn-blue" onclick="clearLog()">✕ Clear Log</button>
+    <div class="car-card">
+      <div class="car-svg"><svg viewBox="0 0 200 80" fill="none"><rect x="15" y="32" width="170" height="32" rx="5" fill="#2a2a2a"/><path d="M30 32 L45 12 L155 12 L170 32" fill="#1a1a2e" stroke="#3a3a5a" stroke-width="1"/><circle cx="50" cy="64" r="11" fill="#111" stroke="#555" stroke-width="2"/><circle cx="50" cy="64" r="5" fill="#2a2a2a"/><circle cx="150" cy="64" r="11" fill="#111" stroke="#555" stroke-width="2"/><circle cx="150" cy="64" r="5" fill="#2a2a2a"/><rect x="50" y="14" width="100" height="16" rx="2" fill="#0d2137" opacity=".9"/><rect x="160" y="36" width="12" height="8" rx="2" fill="#e8001d" opacity=".7"/><rect x="28" y="36" width="12" height="8" rx="2" fill="#fff" opacity=".3"/></svg></div>
+      <div class="car-body">
+        <div class="car-tag">SUV · New</div>
+        <div class="car-name">Titan X7 Elite</div>
+        <div class="car-specs"><span class="spec">5.0L V8</span><span class="spec">520 HP</span><span class="spec">7-Seat</span><span class="spec">4WD</span></div>
+        <div class="car-desc">Dominate every road in the Titan X7. Massive cargo space, third-row seating, and a brutal V8 that makes light work of any terrain.</div>
+        <div class="car-footer"><div class="car-price">$78,500 <span>starting</span></div><button class="car-btn" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'})">Enquire</button></div>
       </div>
     </div>
+
+    <div class="car-card">
+      <div class="car-svg"><svg viewBox="0 0 200 80" fill="none"><rect x="18" y="38" width="164" height="24" rx="3" fill="#2a2a2a"/><path d="M35 38 L55 20 L145 20 L165 38" fill="#2d1a00" stroke="#5a3a00" stroke-width="1"/><circle cx="52" cy="62" r="10" fill="#111" stroke="#666" stroke-width="2"/><circle cx="52" cy="62" r="4" fill="#333"/><circle cx="148" cy="62" r="10" fill="#111" stroke="#666" stroke-width="2"/><circle cx="148" cy="62" r="4" fill="#333"/><rect x="58" y="22" width="84" height="14" rx="2" fill="#1a1000" opacity=".8"/><rect x="162" y="42" width="10" height="5" rx="2" fill="#ff6600" opacity=".7"/><rect x="28" y="42" width="10" height="5" rx="2" fill="#ffff00" opacity=".4"/></svg></div>
+      <div class="car-body">
+        <div class="car-tag">Coupe · New</div>
+        <div class="car-name">Vega RS Sport</div>
+        <div class="car-specs"><span class="spec">2.0T</span><span class="spec">310 HP</span><span class="spec">6-Speed</span><span class="spec">RWD</span></div>
+        <div class="car-desc">Sharp lines, sharper handling. The Vega RS is built for drivers who demand agility, style, and a soundtrack that turns heads.</div>
+        <div class="car-footer"><div class="car-price">$39,900 <span>starting</span></div><button class="car-btn" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'})">Enquire</button></div>
+      </div>
+    </div>
+
+    <div class="car-card">
+      <div class="car-svg"><svg viewBox="0 0 200 80" fill="none"><rect x="12" y="30" width="176" height="34" rx="6" fill="#1a1a1a"/><path d="M28 30 L50 10 L150 10 L172 30" fill="#0a1a0a" stroke="#1a4a1a" stroke-width="1"/><circle cx="48" cy="64" r="12" fill="#111" stroke="#0a0" stroke-width="2"/><circle cx="48" cy="64" r="5" fill="#1a2a1a"/><circle cx="152" cy="64" r="12" fill="#111" stroke="#0a0" stroke-width="2"/><circle cx="152" cy="64" r="5" fill="#1a2a1a"/><rect x="55" y="12" width="90" height="16" rx="3" fill="#001a00" opacity=".9"/><rect x="168" y="34" width="10" height="6" rx="2" fill="#00ff88" opacity=".5"/><text x="87" y="23" font-size="8" fill="#00cc44" font-family="monospace">EV</text></svg></div>
+      <div class="car-body">
+        <div class="car-tag">Electric · New</div>
+        <div class="car-name">Volt EV Max</div>
+        <div class="car-specs"><span class="spec">Dual Motor</span><span class="spec">480 HP</span><span class="spec">480km</span><span class="spec">AWD</span></div>
+        <div class="car-desc">Zero emissions, zero compromise. The Volt EV Max charges from 10–80% in 22 minutes and delivers instant, silent torque.</div>
+        <div class="car-footer"><div class="car-price">$64,200 <span>starting</span></div><button class="car-btn" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'})">Enquire</button></div>
+      </div>
+    </div>
+
+    <div class="car-card">
+      <div class="car-svg"><svg viewBox="0 0 200 80" fill="none"><rect x="10" y="36" width="180" height="26" rx="4" fill="#222"/><path d="M22 36 L40 16 L160 16 L178 36" fill="#1a0a1a" stroke="#4a0a4a" stroke-width="1"/><circle cx="45" cy="62" r="11" fill="#111" stroke="#888" stroke-width="2.5"/><circle cx="45" cy="62" r="4" fill="#2a2a2a"/><circle cx="155" cy="62" r="11" fill="#111" stroke="#888" stroke-width="2.5"/><circle cx="155" cy="62" r="4" fill="#2a2a2a"/><rect x="46" y="18" width="108" height="16" rx="2" fill="#0d000d" opacity=".85"/><rect x="170" y="40" width="12" height="5" rx="2" fill="#cc00ff" opacity=".6"/><rect x="18" y="40" width="12" height="5" rx="2" fill="#fff" opacity=".4"/></svg></div>
+      <div class="car-body">
+        <div class="car-tag">Luxury · Pre-owned</div>
+        <div class="car-name">Regalia S Class</div>
+        <div class="car-specs"><span class="spec">4.0L V8</span><span class="spec">496 HP</span><span class="spec">9-Auto</span><span class="spec">AWD</span></div>
+        <div class="car-desc">Hand-stitched interior, massaging seats, night-vision camera, and a whisper-quiet cabin. Flagship luxury at its finest.</div>
+        <div class="car-footer"><div class="car-price">$91,000 <span>starting</span></div><button class="car-btn" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'})">Enquire</button></div>
+      </div>
+    </div>
+
+    <div class="car-card">
+      <div class="car-svg"><svg viewBox="0 0 200 80" fill="none"><rect x="16" y="34" width="168" height="28" rx="4" fill="#1e1e1e"/><path d="M32 34 L48 16 L152 16 L168 34" fill="#1a1500" stroke="#4a4000" stroke-width="1"/><circle cx="50" cy="62" r="10" fill="#111" stroke="#777" stroke-width="2"/><circle cx="50" cy="62" r="4" fill="#2a2a2a"/><circle cx="150" cy="62" r="10" fill="#111" stroke="#777" stroke-width="2"/><circle cx="150" cy="62" r="4" fill="#2a2a2a"/><rect x="52" y="18" width="96" height="14" rx="2" fill="#100e00" opacity=".8"/><rect x="162" y="38" width="10" height="6" rx="2" fill="#ffaa00" opacity=".6"/><rect x="28" y="38" width="10" height="6" rx="2" fill="#fff" opacity=".3"/></svg></div>
+      <div class="car-body">
+        <div class="car-tag">Pickup · New</div>
+        <div class="car-name">Ranger Pro 4x4</div>
+        <div class="car-specs"><span class="spec">3.5L V6</span><span class="spec">375 HP</span><span class="spec">1T Payload</span><span class="spec">4WD</span></div>
+        <div class="car-desc">Built for those who work as hard as they play. The Ranger Pro handles rough terrain, heavy loads, and long motorway drives equally well.</div>
+        <div class="car-footer"><div class="car-price">$47,400 <span>starting</span></div><button class="car-btn" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'})">Enquire</button></div>
+      </div>
+    </div>
+
   </div>
+</section>
 
-  <!-- ROW 3: resource usage -->
-  <div class="card" style="margin-bottom:16px;">
-    <div class="card-title"><span class="dot"></span>Memory Usage (RSS / Heap)</div>
-    <div id="mem-bars"></div>
+<section id="services">
+  <div class="section-label">What We Offer</div>
+  <div class="section-title">Full-Service Dealership</div>
+  <div class="section-sub">From buying to servicing, we handle everything under one roof.</div>
+  <div class="services-grid">
+    <div class="service-card"><div class="service-icon"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg></div><div class="service-title">Test Drives</div><div class="service-desc">Book a same-day test drive on any vehicle in our lot. No pressure, just you and the car.</div></div>
+    <div class="service-card"><div class="service-icon"><svg viewBox="0 0 24 24"><path d="M20 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg></div><div class="service-title">Finance & Leasing</div><div class="service-desc">Get approved in under 10 minutes. We work with 12 lenders to find you the lowest rate.</div></div>
+    <div class="service-card"><div class="service-icon"><svg viewBox="0 0 24 24"><path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/></svg></div><div class="service-title">Workshop & Servicing</div><div class="service-desc">Certified technicians, genuine parts, and a 2-year service warranty on all work done.</div></div>
+    <div class="service-card"><div class="service-icon"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z"/></svg></div><div class="service-title">Trade-In Appraisal</div><div class="service-desc">Fair market value for your current car in 20 minutes. We buy all makes and models.</div></div>
+    <div class="service-card"><div class="service-icon"><svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg></div><div class="service-title">Extended Warranty</div><div class="service-desc">5-year warranty covering engine, transmission, electronics and 24/7 roadside assistance.</div></div>
+    <div class="service-card"><div class="service-icon"><svg viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg></div><div class="service-title">Home Delivery</div><div class="service-desc">Buy online and get delivered to your door within 3 business days. All paperwork handled digitally.</div></div>
   </div>
+</section>
 
-  <footer>
-    <span>AutoDeploy &mdash; Jenkins + Docker CI/CD &nbsp;|&nbsp; <strong>RUNNING</strong></span>
-    <span id="footer-ts">—</span>
-  </footer>
+<section id="testimonials">
+  <div class="section-label">Customer Reviews</div>
+  <div class="section-title">What Drivers Say</div>
+  <div class="testimonials-grid">
+    <div class="tcard"><div class="stars">★★★★★</div><div class="tquote">"Bought my Titan X7 here last month. Finance approved in 8 minutes and drove away the same day. Zero pressure from anyone."</div><div class="tauthor"><div class="tavatar">AK</div><div><div class="tname">Ahmed Khan</div><div class="trole">Titan X7 Owner</div></div></div></div>
+    <div class="tcard"><div class="stars">★★★★★</div><div class="tquote">"The Volt EV Max is incredible. Range anxiety gone — 480km on one charge. The team explained everything about charging. Brilliant."</div><div class="tauthor"><div class="tavatar">SR</div><div><div class="tname">Sarah Roberts</div><div class="trole">Volt EV Max Owner</div></div></div></div>
+    <div class="tcard"><div class="stars">★★★★★</div><div class="tquote">"Traded in my old car, got a fair price without any haggling, and walked out with the Vega RS Sport in under 2 hours."</div><div class="tauthor"><div class="tavatar">MJ</div><div><div class="tname">Marcus Johnson</div><div class="trole">Vega RS Owner</div></div></div></div>
+  </div>
+</section>
 
+<div class="cta-section">
+  <h2>Ready to Find Your Perfect Car?</h2>
+  <p>Over 340 vehicles in stock. Test drive any car today — no appointment needed.</p>
+  <button class="btn-white" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'})">Book a Test Drive</button>
 </div>
 
+<section id="contact">
+  <div class="section-label">Get in Touch</div>
+  <div class="section-title">Visit Us or Send a Message</div>
+  <div class="contact-grid">
+    <div class="contact-info">
+      <div class="contact-item"><div class="c-icon"><svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg></div><div><div class="c-label">Address</div><div class="c-val">42 Motor Mile, Karachi, Pakistan</div></div></div>
+      <div class="contact-item"><div class="c-icon"><svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg></div><div><div class="c-label">Phone</div><div class="c-val">+92 300 123 4567</div></div></div>
+      <div class="contact-item"><div class="c-icon"><svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg></div><div><div class="c-label">Email</div><div class="c-val">sales@autodrivemotors.com</div></div></div>
+      <div class="contact-item"><div class="c-icon"><svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/></svg></div><div><div class="c-label">Hours</div><div class="c-val">Mon–Sat 9am–7pm &nbsp;|&nbsp; Sun 10am–4pm</div></div></div>
+    </div>
+    <form class="contact-form" onsubmit="submitForm(event)">
+      <div class="form-row">
+        <div class="form-group"><label>First Name</label><input type="text" placeholder="Shoaib" required/></div>
+        <div class="form-group"><label>Last Name</label><input type="text" placeholder="Ahmed" required/></div>
+      </div>
+      <div class="form-group"><label>Email</label><input type="email" placeholder="shoaib@email.com" required/></div>
+      <div class="form-group"><label>Phone</label><input type="tel" placeholder="+92 300 000 0000"/></div>
+      <div class="form-group"><label>Interested In</label>
+        <select>
+          <option>Phantom GT 500 — Sedan</option><option>Titan X7 Elite — SUV</option><option>Vega RS Sport — Coupe</option><option>Volt EV Max — Electric</option><option>Regalia S Class — Luxury</option><option>Ranger Pro 4x4 — Pickup</option><option>Other / Not sure yet</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Message</label><textarea rows="3" placeholder="I'd like to book a test drive for..."></textarea></div>
+      <button type="submit" class="form-submit">Send Enquiry</button>
+      <div class="form-msg" id="form-msg">Message sent! We'll be in touch within 24 hours.</div>
+    </form>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-top">
+    <div class="footer-brand">
+      <div class="nav-logo">Auto<span style="color:var(--red)">Drive</span> Motors</div>
+      <p>Premium vehicles and outstanding service since 2007. Karachi's most trusted dealership.</p>
+    </div>
+    <div class="footer-col"><h4>Inventory</h4><ul><li><a href="#cars">Sedans</a></li><li><a href="#cars">SUVs</a></li><li><a href="#cars">Electric</a></li><li><a href="#cars">Luxury</a></li><li><a href="#cars">Pickups</a></li></ul></div>
+    <div class="footer-col"><h4>Services</h4><ul><li><a href="#services">Test Drives</a></li><li><a href="#services">Finance</a></li><li><a href="#services">Servicing</a></li><li><a href="#services">Trade-In</a></li><li><a href="#services">Warranty</a></li></ul></div>
+    <div class="footer-col"><h4>Info</h4><ul><li><a href="#home">About Us</a></li><li><a href="#testimonials">Reviews</a></li><li><a href="#contact">Contact</a></li><li><a href="/pipeline">Pipeline Status</a></li></ul></div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2025 AutoDrive Motors. All rights reserved.</span>
+    <a href="/pipeline">CI/CD Status</a>
+  </div>
+</footer>
+
+<a href="/pipeline" class="build-badge" id="build-badge">
+  <span class="dot"></span>
+  <span id="badge-text">Build #— · Live</span>
+</a>
+
 <script>
-// ─── helpers ────────────────────────────────────────────────
-function ts() {
-  return new Date().toTimeString().slice(0,8);
+function submitForm(e) {
+  e.preventDefault();
+  const msg = document.getElementById('form-msg');
+  const btn = e.target.querySelector('.form-submit');
+  msg.style.display = 'block';
+  btn.textContent = 'Sent!';
+  btn.disabled = true;
+  setTimeout(() => { msg.style.display='none'; e.target.reset(); btn.textContent='Send Enquiry'; btn.disabled=false; }, 4000);
 }
-
-function addLog(msg, level='info') {
-  const el = document.getElementById('log-stream');
-  const line = document.createElement('div');
-  line.className = 'log-line';
-  line.innerHTML = `<span class="log-ts">${ts()}</span><span class="log-msg ${level}">${msg}</span>`;
-  el.appendChild(line);
-  el.scrollTop = el.scrollHeight;
-}
-
-function clearLog() {
-  document.getElementById('log-stream').innerHTML = '';
-  addLog('Log cleared', 'warn');
-}
-
-function syntaxHighlight(obj) {
-  const json = JSON.stringify(obj, null, 2);
-  return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+-]?\d+)?)/g, m => {
-    if (/^"/.test(m)) return /:$/.test(m) ? `<span class="key">${m}</span>` : `<span class="str">${m}</span>`;
-    if (/true|false/.test(m)) return `<span class="bool">${m}</span>`;
-    if (/null/.test(m)) return `<span class="null">${m}</span>`;
-    return `<span class="num">${m}</span>`;
-  });
-}
-
-function setBadge(id, status) {
-  const el = document.getElementById(id);
-  el.className = 'status-badge ' + (status === 200 ? 'ok' : 'err');
-  el.textContent = status === 200 ? 'OK ' + status : 'ERR ' + status;
-}
-
-function fmtUptime(s) {
-  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = Math.floor(s%60);
-  return `${h}h ${m}m ${sec}s`;
-}
-
-function fmtBytes(b) { return (b/1024/1024).toFixed(1) + ' MB'; }
-
-// ─── API calls ───────────────────────────────────────────────
-async function fetchHealth() {
-  addLog('GET /health', 'info');
+async function loadBadge() {
   try {
-    const r = await fetch('/health');
+    const r = await fetch('/api/pipeline');
     const d = await r.json();
-    setBadge('health-badge', r.status);
-    document.getElementById('health-out').innerHTML = syntaxHighlight(d);
-    document.getElementById('m-uptime').textContent = fmtUptime(d.uptime);
-    document.getElementById('m-version').textContent = d.version;
-    document.getElementById('m-build').textContent = '#' + d.build;
-    document.getElementById('hdr-env').textContent = 'production';
-    addLog(`/health → ${r.status} healthy`, 'ok');
-  } catch(e) {
-    setBadge('health-badge', 500);
-    document.getElementById('health-out').textContent = 'Error: ' + e.message;
-    addLog('/health → fetch failed: ' + e.message, 'err');
-  }
+    const b = d.current;
+    const dot = document.querySelector('.build-badge .dot');
+    document.getElementById('badge-text').textContent = 'Build #' + b.buildNumber + ' · ' + (b.status === 'success' ? 'Live' : b.status);
+    if (b.status === 'failed') dot.style.background = '#ff4f4f';
+    else if (b.status === 'running') { dot.style.background = '#ffc107'; }
+  } catch(e) {}
 }
-
-async function fetchMessage() {
-  addLog('GET /api/message', 'info');
-  try {
-    const r = await fetch('/api/message');
-    const d = await r.json();
-    setBadge('msg-badge', r.status);
-    document.getElementById('msg-out').innerHTML = syntaxHighlight(d);
-    document.getElementById('hdr-env').textContent = d.environment;
-    addLog(`/api/message → "${d.message.slice(0,40)}..."`, 'ok');
-  } catch(e) {
-    setBadge('msg-badge', 500);
-    document.getElementById('msg-out').textContent = 'Error: ' + e.message;
-    addLog('/api/message → failed: ' + e.message, 'err');
-  }
-}
-
-async function fetchStatus() {
-  addLog('GET /api/status', 'info');
-  try {
-    const r = await fetch('/api/status');
-    const d = await r.json();
-    document.getElementById('msg-out').innerHTML = syntaxHighlight(d);
-    document.getElementById('m-node').textContent = d.node;
-    document.getElementById('m-platform').textContent = d.platform;
-    renderMemBars(d.memory);
-    addLog(`/api/status → node ${d.node} on ${d.platform}`, 'ok');
-  } catch(e) {
-    addLog('/api/status → failed: ' + e.message, 'err');
-  }
-}
-
-function renderMemBars(mem) {
-  const el = document.getElementById('mem-bars');
-  const bars = [
-    { label: 'RSS',       val: mem.rss,       color: 'green', max: 256*1024*1024 },
-    { label: 'HeapUsed',  val: mem.heapUsed,  color: 'blue',  max: 128*1024*1024 },
-    { label: 'HeapTotal', val: mem.heapTotal, color: 'amber', max: 128*1024*1024 },
-    { label: 'External',  val: mem.external,  color: '',      max: 32*1024*1024  },
-  ];
-  el.innerHTML = bars.map(b => {
-    const pct = Math.min(100, (b.val / b.max * 100)).toFixed(1);
-    return `<div class="progress-wrap">
-      <div class="progress-label"><span>${b.label}</span><span>${fmtBytes(b.val)} / ${fmtBytes(b.max)}</span></div>
-      <div class="progress-bar"><div class="progress-fill ${b.color}" style="width:${pct}%"></div></div>
-    </div>`;
-  }).join('');
-}
-
-async function pingAll() {
-  addLog('─── Pinging all endpoints ───', 'warn');
-  await fetchHealth();
-  await fetchMessage();
-  await fetchStatus();
-  addLog('─── All endpoints pinged ────', 'warn');
-}
-
-// ─── init ────────────────────────────────────────────────────
-document.getElementById('hdr-host').textContent = location.host;
-document.getElementById('footer-ts').textContent = 'Last loaded: ' + new Date().toLocaleString();
-
-setInterval(() => {
-  document.getElementById('footer-ts').textContent = 'Updated: ' + new Date().toLocaleString();
-}, 5000);
-
-// auto-load on start
-(async () => {
-  await fetchHealth();
-  await fetchMessage();
-  await fetchStatus();
-})();
+loadBadge();
 </script>
 </body>
 </html>
